@@ -1,0 +1,107 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2012-01-08
+#describe:terminal font color
+
+normal="\033[0m"
+echo -en "normal:${normal}prompt"
+echo "	$normal"
+
+bold="\033[1m"
+echo -en "bold:${bold}prompt$normal"
+echo "	$bold"
+
+boldoff="\033[2m"
+echo -en "boldoff:${boldoff}prompt$normal"
+echo "	$boldoff"
+
+italic="\033[3m"
+echo -en "italic:${italic}prompt$normal"
+echo "	$italic"
+
+ulon="\033[4m"
+echo -en "ulon:${ulon}prompt$normal"
+echo "	$ulon"
+
+blink="\033[5m"
+echo -en "blink:${blink}prompt$normal"
+echo "	$blink"
+
+invon="\033[7m"
+echo -en "invon:${invon}prompt$normal"
+echo "	$invon"
+
+echo
+
+black="\033[30m"
+echo -en "black:${black}prompt$normal"
+echo "	$black"
+
+red="\033[31m"
+echo -en "red:${red}prompt$normal"
+echo "	$red"
+
+green="\033[32m"
+echo -en "green:${green}prompt$normal"
+echo "	$green"
+
+yellow="\033[33m"
+echo -en "yellow:${yellow}prompt$normal"
+echo "	$yellow"
+
+blue="\033[34m"
+echo -en "blue:${blue}prompt$normal"
+echo "	$blue"
+
+purple="\033[35m"
+echo -en "purple:${purple}prompt$normal"
+echo "	$purple"
+
+cyan="\033[36m"
+echo -en "cyan:${cyan}prompt$normal"
+echo "	$cyan"
+
+white="\033[37m"
+echo -en "white:${white}prompt$normal"
+echo "	$white"
+
+echo
+
+blackb="\033[40m"
+echo -en "blackb:${blackb}prompt$normal"
+echo "	$blackb"
+
+redb="\033[41m"
+echo -en "redb:${redb}prompt$normal"
+echo "	$redb"
+
+greenb="\033[42m"
+echo -en "greenb:${greenb}prompt$normal"
+echo "	$greenb"
+
+yellowb="\033[43m"
+echo -en "yellowb:${yellowb}prompt$normal"
+echo "	$yellowb"
+
+blueb="\033[44m"
+echo -en "blueb:${blueb}prompt$normal"
+echo "	$blueb"
+
+purpleb="\033[45m"
+echo -en "purpleb:${purpleb}prompt$normal"
+echo "	$purpleb"
+
+cyanb="\033[46m"
+echo -en "cyanb:${cyanb}prompt$normal"
+echo "	$cyanb"
+
+whiteb="\033[47m"
+echo -en "whiteb:${whiteb}prompt$normal"
+echo "	$whiteb"
+
+echo
+
+bred="\033[1m\033[31m"
+echo -en "bold red:${bred}prompt$normal"
+echo "	$bred"

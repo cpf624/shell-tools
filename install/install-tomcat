@@ -1,0 +1,84 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2014-03-29
+#describe:tomcat
+
+SHELL_TOOLS=$(dirname "$0")
+
+TOMCAT_VERSION=7.0.52
+TOMCAT_FOLDER=apache-tomcat-${TOMCAT_VERSION}
+TOMCAT_FILE=${TOMCAT_FOLDER}.tar.gz
+TOMCAT_URL=http://apache.fayea.com/apache-mirror/tomcat/tomcat-7/v${TOMCAT_VERSION}/bin/${TOMCAT_FILE}
+TOMCAT_INSTALL=/var/lib
+TOMCAT_PATH=${TOMCAT_INSTALL}/tomcat
+TOMCAT_ETC=/etc/init.d/tomcat
+TOMCAT_USER=tomcat7
+
+JAVA_HOME=/usr/lib/jvm/java-7-sun
+
+OPTERR=0
+input=n
+while getopts "y" option
+do
+    case $option in
+    y)
+        input=y
+    ;;
+    esac
+done
+if [ "$input" != 'y' ]; then
+    read -p "install tomcat7?[y/N]" input
+fi
+
+if [ "$input" == 'y' ] || [ "$input" == 'Y' ]; then
+    if [ ! -f "$TOMCAT_FILE" ];then
+        wget "$TOMCAT_URL"
+    fi
+    
+    tar xf "$TOMCAT_FILE"
+    sudo mv "$TOMCAT_FOLDER" "$TOMCAT_INSTALL"
+    sudo ln -s "${TOMCAT_INSTALL}/${TOMCAT_FOLDER}" "$TOMCAT_PATH"
+    sudo rm -rf "${TOMCAT_PATH}/webapps/docs"
+    sudo rm -rf "${TOMCAT_PATH}/webapps/examples"
+    
+    while [ "$admin" == '' ]
+    do
+    	read -p "admin:" admin
+    done
+    stty -echo
+    while [ "$password" == '' ]
+    do
+    	read -p "password:" password
+    done
+    stty echo
+    echo ''
+    tuser="${TOMCAT_PATH}/conf/tomcat-users.xml"
+    line=$(expr $(sed -n "/<\/tomcat-users>/=" "$tuser") - 1)
+    sudo sed -i "${line}a \	<user username=\""$admin"\" password=\""$password"\" roles=\"admin-gui, admin-script, manager-gui, manager-script\"/>" "$tuser"
+    sudo sed -i "${line}a \	<role rolename=\"manager-script\"/>" "$tuser"
+    sudo sed -i "${line}a \	<role rolename=\"manager-gui\"/>" "$tuser"
+    sudo sed -i "${line}a \	<role rolename=\"admin-script\"/>" "$tuser"
+    sudo sed -i "${line}a \	<role rolename=\"admin-gui\"/>" "$tuser"
+    sudo sed -i 's/<Connector port="8080/<Connector URIEncoding="UTF-8" port="8080/g' "${TOMCAT_PATH}/conf/server.xml"
+
+    sudo apt-get install build-essential
+    cd "${TOMCAT_PATH}/bin"
+    sudo tar xvfz commons-daemon-native.tar.gz
+    cd commons-daemon-1.0.15-native-src/unix
+    ./configure --with-java=$JAVA_HOME && make
+    cp jsvc ../..
+    cd ../..
+    sudo useradd -d "$TOMCAT_PATH" -s /bin/sh -m "$TOMCAT_USER"
+    sudo chown -R "$TOMCAT_USER":"$TOMCAT_USER" "$TOMCAT_PATH"
+    sudo chown -R "$TOMCAT_USER":"$TOMCAT_USER" "${TOMCAT_INSTALL}/${TOMCAT_FOLDER}"
+    
+    sudo cp "$SHELL_TOOLS/conf/tomcat" "$TOMCAT_ETC"
+    sudo sed -i "s/\$CATALINA_HOME_PATH/"${TOMCAT_PATH//\//\\/}"/g" "$TOMCAT_ETC"
+    sudo sed -i "s/\$JAVA_HOME_PATH/"${JAVA_HOME//\//\\/}"/g" "$TOMCAT_ETC"
+    sudo sed -i "s/\$CATALINA_USER/"${TOMCAT_USER//\//\\/}"/g" "$TOMCAT_ETC"
+    sudo sed -i "s/\$CATALINA_GROUP/"${TOMCAT_USER//\//\\/}"/g" "$TOMCAT_ETC"
+    sudo chmod ug+x "$TOMCAT_ETC"
+    sudo update-rc.d tomcat defaults
+    sudo service tomcat start
+fi

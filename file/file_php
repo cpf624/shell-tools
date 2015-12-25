@@ -1,0 +1,29 @@
+#!/bin/bash
+# Author:   Jhat
+# Email:    cpf624@126.com
+# Date:     2011-08-11
+# Describe: new php file
+
+if [ $# -eq 0 ];then
+    echo "[php]Please input file name"
+    exit 0
+fi
+
+file="$1.php"
+cat > "$file" <<EOF
+<?php
+/**
+ * Author:   $(whoami)
+ * Date:     $(date +%Y-%m-%d)
+ * Email:    $email
+ * Home:     $home_page
+ * Describe: 
+ */
+
+
+?>
+EOF
+
+if [ "$2" != "-n" ];then
+	vi "$file"
+fi

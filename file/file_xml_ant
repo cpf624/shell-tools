@@ -1,0 +1,47 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2011-07-23
+#describe:
+
+if [ $# -eq 0 ];then
+	echo "[ant]Please input project name"
+	exit 0
+fi
+
+project="$1"
+cat > build.xml << EOF
+<?xml version="1.0" ?>
+<project name="${project}" default="execute">
+	<description>description</description>
+	<target name="init">
+		<mkdir dir="bin/classes"/>
+		<mkdir dir="dist"/>
+	</target>
+	<target name="compile" depends="init"
+		description="Compiles the source code">
+		<javac srcdir="src" destdir="bin/classes" includeantruntime="on"/>
+	</target>
+	<target name="archive" depends="compile"
+		description="Creates the JAR file">
+		<jar destfile="dist/${project}.jar"
+			baseddir="bin/classes"/>
+	</target>
+	<target name="clean" depends="init"
+		description="Remove the temporary directories used">
+		<delete dir="bin"/>
+		<delete dir="dist"/>
+	</target>
+	<target name="execute" depends="compile"
+		description="Run the program">
+		<echo level="warning" message="running"/>
+		<java classname="org.${project}.Main"
+			classpath="bin/classes">
+		</java>
+	</target>
+</project>
+EOF
+
+if [ "$2" == "-o" ];then
+	vi build.xml
+fi

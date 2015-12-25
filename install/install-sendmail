@@ -1,0 +1,28 @@
+#!/bin/bash
+#author:jhat
+#email:pfchen@bainainfo.com
+#date:2012-08-30
+#describe:
+
+if [ "$(dpkg -l | grep sendmail)" == '' ];then
+	read -p "install sendmail?[y/n]" input
+	if [ $input == 'y' ] || [ $input == 'Y' ]; then
+    sudo apt-get install sendmail mailutils
+
+    sudo cat >> /etc/mail/sendmail.cf <<EOF
+#修改监听IP
+O DaemonPortOptions=Port=smtp,Addr=10.5.0.100, Name=MTA
+
+#修改邮件停留在queue的时间
+O Timeout.queuereturn=1d
+
+#限制每封邮件的收件者
+O MaxRecipientsPerMessage=100
+
+#日志级别：0 no log, 1 alert, 2 crit, 3 err or warning, 4 notice, 5~11 info, >=12 debug
+O LogLevel=14
+EOF
+
+    sudo service sendmail restart
+	fi
+fi

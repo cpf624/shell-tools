@@ -1,0 +1,34 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2011-07-23
+#describe:creat web.xml
+
+if [ $# -eq 0 ];then
+	echo "[web]Please input project name."
+	exit 0
+fi
+
+project="$1"
+
+cat > web.xml << EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app version="2.5" 
+	xmlns="http://java.sun.com/xml/ns/javaee" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xsi:schemaLocation="http://java.sun.com/xml/ns/javaee 
+	http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">
+  <welcome-file-list>
+    <welcome-file>index.jsp</welcome-file>
+  </welcome-file-list>
+  <context-param>
+  	<param-name>webAppRootKey</param-name>
+	<param-value>webapp.root.${project}</param-value>
+ </context-param>
+
+</web-app>
+EOF
+
+if [ "$2" == "-o" ];then
+	vi web.xml
+fi

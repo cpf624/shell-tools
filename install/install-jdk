@@ -1,0 +1,31 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2012-01-07
+#describe:java
+
+JDK_FILE="jdk-8u51-linux-x64.tar.gz"
+JDK_FOLDER="jdk1.8.0_51"
+JDK_URL="http://dl.jhat.pw/java/${JDK_FILE}"
+JDK_INSTALL="/usr/lib/java"
+JDK_PATH="${JDK_INSTALL}/${JDK_FOLDER}"
+JDK_HOME="${JDK_INSTALL}/java-8-sun"
+
+BASHRC="/etc/bash.bashrc"
+
+type java > /dev/null 2>&1
+if [ $? != 0 ];then
+    if [ ! -d "$JDK_INSTALL" ]; then
+        sudo mkdir "$JDK_INSTALL"
+    fi
+    if [ ! -f "$JDK_FILE" ]; then
+        wget "$JDK_URL"
+    fi
+
+    sudo tar xf "$JDK_FILE" -C "$JDK_INSTALL"
+    sudo ln -s "$JDK_PATH" "$JDK_HOME"
+
+	sudo su -c "echo 'export JAVA_HOME=${JDK_HOME}' >> "$BASHRC""
+    sudo su -c "echo 'export CLASSPATH=.:\$JAVA_HOME/lib:\$JAVA_HOME/jre/lib' >> "$BASHRC""
+    sudo su -c "echo 'export PATH=\$PATH:\$JAVA_HOME/bin' >> "$BASHRC""
+fi

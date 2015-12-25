@@ -1,0 +1,43 @@
+#!/bin/bash
+#下载网站
+root=http://
+
+#-i, --input-file=FILE 下载在FILE文件中出现的URLs
+#-N, --timestamping 不要重新下载文件除非比本地文件新
+#-nr, --dont-remove-listing 不移走 `.listing'文件
+#-r, --recursive 递归下载－－慎用!
+#-l, --level=NUMBER 最大递归深度 (inf 或 0 代表无穷).
+#--delete-after 在现在完毕后局部删除文件
+#-k, --convert-links 转换非相对链接为相对链接
+#-K, --backup-converted 在转换文件X之前，将之备份为 X.orig
+#-m, --mirror 等价于 -r -N -l inf -nr
+
+function download(){
+	for file in "$1"/*
+	do
+		#echo "$file"
+		if [ -d "$file" ];then
+			#echo "$root$file/"
+			wget -U firefox -m -K -i "$root$file/"
+			download "$file"
+		#elif [ -f "$file" ];then
+		#	echo "$file"
+		fi
+	done
+}
+if [ $# == 0 ];then
+	echo "Please input an url"
+	exit 0
+fi
+input="$*"
+protocal=${input%%:*}
+if [ "$protocal" == "$input" ];then
+	uri=${input%%/*}
+	input="http://$input"
+else
+	root="$protocal://"	#截取协议
+	uri=${input##$protocal://} #截取uri
+	uri=${uri%%/*}	#去除参数
+fi
+wget -U firefox -m -K -i "$input"
+download "$uri"

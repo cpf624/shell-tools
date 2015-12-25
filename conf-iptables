@@ -1,0 +1,66 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2012-01-07
+#describe:防火墙配置
+
+SHELL_TOOLS=$(dirname "$0")
+INT=/etc/network/interfaces
+
+#清除防火墙配置
+iptables -F
+iptables -X
+iptables -t nat -F
+iptables -t nat -X
+iptables -P INPUT DROP
+iptables -P FORWARD ACCEPT
+iptables -P OUTPUT ACCEPT
+iptables -t nat -P PREROUTING ACCEPT
+iptables -t nat -P POSTROUTING ACCEPT 
+iptables -t nat -P OUTPUT ACCEPT
+
+#信任网域
+iptables -A INPUT -i lo -j ACCEPT
+iptables -A INPUT -s localhost -j ACCEPT
+
+#每秒钟最多允许100个新连接
+#iptables -A INPUT -f -m limit --limit 100/sec --limit-burst 100 -j ACCEPT
+#防止ping洪水攻击，限制每秒的ping包不超过10个
+#iptables -A FORWARD -p icmp --icmp-type echo-request -m limit --limit 1/s --limit-burst 10 -j ACCEPT
+#防止各种端口扫描
+#iptables -A INPUT -p tcp -m tcp --tcp-flags SYN,RST,ACK SYN -j DROP
+
+#允许 ICMP 封包与允许已建立的联机通过
+iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT 
+#AICMP="0 3 3/4 4 8 11 12 14 16 18"
+AICMP="0 8"
+for tyicmp in $AICMP 
+do
+    iptables -A INPUT -p icmp --icmp-type $tyicmp -j ACCEPT
+done
+
+#开放特定端口
+iptables -A INPUT -p tcp --dport 20 -j ACCEPT #FTP
+iptables -A INPUT -p tcp --dport 21 -j ACCEPT #FTP
+iptables -A INPUT -p tcp --dport 22 -j ACCEPT #SSH
+iptables -A INPUT -p tcp --dport 53 -j ACCEPT #DNS
+iptables -A INPUT -p udp --dport 53 -j ACCEPT #DNS
+iptables -A INPUT -p tcp --dport 80 -j ACCEPT #WWW
+iptables -A INPUT -p tcp --dport 443 -j ACCEPT #WWW
+#iptables -A INPUT -p tcp --dport 25 -j ACCEPT #SMTP
+#iptables -A INPUT -p tcp --dport 110 -j ACCEPT #POP3
+#iptables -A INPUT -p tcp --dport 113 -j ACCEPT #AUTH
+iptables -A INPUT -p tcp --dport 1723 -j ACCEPT #PPTP
+iptables -A INPUT -p tcp --dport 30001:31000 -j ACCEPT #VSFTP
+
+#加载防火墙规则
+load='pre-up iptables-restore < /etc/iptables'
+if [ "$(grep "^$load" $INT)" == '' ];then
+	echo "$load" >> $INT
+fi
+
+#保存防火墙规则
+save='post-down iptables-save > /etc/iptables'
+if [ "$(grep "^$save" $INT)" == '' ];then
+	echo "$save" >> $INT
+fi

@@ -1,0 +1,42 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2012-01-08
+#describe:maven
+
+MVN_FILE="apache-maven-3.3.3-bin.tar.gz"
+MVN_FOLDER="apache-maven-3.3.3"
+MVN_URL="http://dl.jhat.pw/java/${MVN_FILE}"
+MVN_INSTALL="/usr/lib/java"
+MVN_PATH="${MVN_INSTALL}/${MVN_FOLDER}"
+MVN_HOME="${MVN_INSTALL}/maven"
+
+M2_HOME="$HOME/.m2"
+M2_CONF="$M2_HOME/settings.xml"
+BASHRC="/etc/bash.bashrc"
+
+type mvna > /dev/null 2>&1
+if [ $? != 0 ];then
+    if [ ! -d "$MVN_INSTALL" ]; then
+        sudo mkdir "$MVN_INSTALL"
+    fi
+    if [ ! -f "$MVN_FILE" ]; then
+        wget "$MVN_URL"
+    fi
+
+    sudo tar xf "$MVN_FILE" -C "$MVN_INSTALL"
+    sudo ln -s "$MVN_PATH" "$MVN_HOME"
+
+    echo 'MAVEN_OPTS="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=8787"' >> ~/.bashrc
+	sudo su -c "echo 'export MVN_HOME=${MVN_HOME}' >> '$BASHRC'"
+    sudo su -c "echo 'export PATH=\$PATH:\$MVN_HOME/bin' >> '$BASHRC'"
+
+    # mkdir -p "$M2_HOME"
+	# cp "${MVN_HOME}/conf/settings.xml" "$M2_HOME"
+	# sed -i "54a \  <localRepository>$M2_HOME/repository</localRepository>" "$M2_CONF"
+	# sed -i "159a \    </mirror>" "$M2_CONF"
+	# sed -i "159a \      <url>http://nexus.xhomestudio.org/content/repositories/public</url>" "$M2_CONF"
+	# sed -i "159a \      <mirrorOf>*</mirrorOf>" "$M2_CONF"
+	# sed -i "159a \      <id>mirror_xhome</id>" "$M2_CONF"
+	# sed -i "159a \    <mirror>" "$M2_CONF"
+fi

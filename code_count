@@ -1,0 +1,87 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2012-03-17
+#describe: 代码统计
+
+declare -i COUNT_JAVA=0
+declare -i COUNT_CP=0 #c/c++
+declare -i COUNT_XML=0
+declare -i COUNT_SHELL=0
+declare -i COUNT_PYTHON=0
+declare -i COUNT_SQL=0
+declare -i COUNT_JS=0
+declare -i COUNT_HTML=0
+declare -i COUNT_CSS=0
+declare -i COUNT_JSP=0
+declare -i COUNT_OTHER=0
+
+
+function count_directory(){
+	for file in "$1"/*
+	do
+		#排除以*结尾的file
+		if [ $(echo "$file" | grep '*$' -c) -gt 0 ];then
+			continue
+		elif [ -d "$file" ]; then
+			count_directory "$file"
+		else
+			code_count=$(wc -l "$file" | cut -d ' ' -f 1)
+			ext="${file##*.}"
+			echo "$ext" | tr A-Z a-z > /dev/null
+			case "$ext" in
+			java)
+				COUNT_JAVA+=$code_count
+			;;
+			c|cpp|h)
+				COUNT_CP+=$code_count
+			;;
+			"$file"|sh)
+				COUNT_SHELL+=$code_count
+			;;
+			py)
+				COUNT_PYTHON+=$code_count
+			;;
+			sql)
+				COUNT_SQL+=$code_count
+			;;
+			xml)
+				COUNT_XML+=$code_count
+			;;
+			js)
+				COUNT_JS+=$code_count
+			;;
+			html)
+				COUNT_HTML+=$code_count
+			;;
+			css)
+				COUNT_CSS+=$code_count
+			;;
+			jsp)
+				COUNT_JSP+=$code_count
+			;;
+			*)
+				COUNT_OTHER+=$code_count
+			;;
+			esac
+		fi
+	done
+}
+
+for f in "$@"
+do
+	count_directory "$f"
+done
+
+echo "Code count sumary:"
+echo "	JAVA:$COUNT_JAVA"
+echo "	C/C++:$COUNT_CP"
+echo "	SHELL:$COUNT_SHELL"
+echo "	PYTHON:$COUNT_PYTHON"
+echo "	SQL:$COUNT_SQL"
+echo "	XML:$COUNT_XML"
+echo "	JavaScript:$COUNT_JS"
+echo "	HTML:$COUNT_HTML"
+echo "	CSS:$COUNT_CSS"
+echo "	JSP:$COUNT_JSP"
+echo "	OTHER:$COUNT_OTHER"

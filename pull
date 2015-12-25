@@ -1,0 +1,29 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2011-11-13
+#describe:批量拉取、更新项目
+
+if [ "$1" == "" ];then
+	projectPath="$project"
+else
+	projectPath="$1"
+fi
+if [ "$projectPath" == "" ];then
+	echo "Please input the projectPath"
+	exit 0
+fi
+
+echo -e "$(date +%Y-%m-%d\ %H:%M:%S)\n"
+for file in "$projectPath"/*
+do
+	if [ -d "$file/.hg" ];then
+		echo "update $file"
+		cd "$file"
+		hg pull
+		hg update
+		cd ..
+	fi
+done
+
+echo -e "\n"

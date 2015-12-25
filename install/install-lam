@@ -1,0 +1,12 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2012-01-09
+#describe:lam
+
+if [ "$(dpkg -l | grep ldap-account-manager)" == '' ]; then
+	read -p "install ldap-account-manager?[y/n]" input
+	if [ $input == 'y' ] || [ $input == 'Y' ]; then
+		sudo apt-get install ldap-account-manager
+	fi
+fi

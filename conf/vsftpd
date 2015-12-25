@@ -1,0 +1,13 @@
+service ftp
+{
+	socket_type             = stream
+	wait                    = no
+	user                    = root
+	server                  = /usr/sbin/vsftpd
+	server_args             = /etc/vsftpd.conf
+	log_on_success          += DURATION USERID
+	log_on_failure          += USERID
+	nice                    = 10
+	disable                 = no
+	flags					= IPv4
+}

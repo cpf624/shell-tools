@@ -1,0 +1,49 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2011-07-23
+#describe:
+
+SHELL_TOOLS=$(dirname "$0")
+
+if [ $# -eq 0 ];then
+	echo "[jsp]Please input file name"
+	exit 0
+fi
+
+title="$1"
+file="$title.jsp"
+
+cat > "$file" << EOF
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<%@ taglib prefix="s" uri="/struts-tags" %>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+	<!--
+	Auther:   $(whoami)
+	Email:    ${email}
+	Date:     $(date +%Y-%m-%d)
+	Describe:
+	-->
+	<base href="<%=request.getScheme()+"://"+request.getServerName()+":"
+		+request.getServerPort()+request.getContextPath()+"/" %>">
+    <title><s:text name=""/></title>
+	<!--
+	<link rel="stylesheet" type="text/css" href=""/>
+	<script type="text/javascript" src=""></script>
+	-->
+</head>
+<body>
+	<s:i18n>
+	<h1>new_struts</h1>
+	</s:i18n>
+</body>
+</html>
+EOF
+
+if [ "$2" != "-n" ];then
+	vi "$file"
+fi
+

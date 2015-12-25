@@ -1,0 +1,19 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2011-07-23
+#describe:
+
+if [ $# -eq 0 ];then
+	echo "[xml]Please input file name"
+	exit 0
+fi
+
+file="$1.xml"
+cat > "$file" << EOF
+<?xml version="1.0" ?>
+EOF
+
+if [ "$2" != "-n" ];then
+	vi "$file"
+fi

@@ -1,0 +1,25 @@
+#!/bin/bash
+#author:Jhat
+#email:cpf624@126.com
+#date:2011-07-19
+#describe:new shell file
+
+if [ $# -eq 0 ];then
+    echo "[shell]Please input file name"
+    exit 0
+fi
+
+file="$1"
+cat > "$file" <<EOF
+#!/bin/bash
+# Author:   $(whoami)
+# Email:    $email
+# Date:     $(date +%Y-%m-%d)
+# Describe:
+
+EOF
+chmod a+x "$file"
+
+if [ "$2" != "-n" ];then
+	vi "$file"
+fi

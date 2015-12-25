@@ -1,0 +1,22 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2012-01-07
+#describe:VirtualBox
+
+SHELL_TOOLS=$(dirname "$0")
+
+if [ "$(dpkg -l | grep virtualbox)" == '' ];then
+	read -p "install VirtualBox?[y/n]" input
+	if [ $input == 'y' ] || [ $input == 'Y' ];then
+		if [ "$(grep http://download.virtualbox.org/virtualbox/debian /etc/apt/sources.list)" == '' ];then
+			sudo echo 'deb http://download.virtualbox.org/virtualbox/debian lucid contrib non-free' >> /etc/apt/sources.list
+			sudo apt-key add "$SHELL_TOOLS/conf/oracle_vbox.asc"
+			sudo apt-get update
+		fi
+		sudo apt-get install virtualbox-4.1 dkms
+		wget -N http://dlc.sun.com.edgesuite.net/virtualbox/4.1.8/Oracle_VM_VirtualBox_Extension_Pack-4.1.8-75467.vbox-extpack
+		sudo VBoxManage extpack install Oracle_VM_VirtualBox_Extension_Pack-4.1.8-75467.vbox-extpack
+		rm Oracle_VM_VirtualBox_Extension_Pack-4.1.8-75467.vbox-extpack
+	fi
+fi

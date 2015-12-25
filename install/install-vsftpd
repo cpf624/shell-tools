@@ -1,0 +1,27 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2012-01-08
+#describe:vsftpd
+
+SHELL_TOOLS=$(dirname "$0")
+
+if [ "$(dpkg -l | grep vsftpd)" == '' ];then
+	read -p "install vsftpd?[y/n]" input
+	if [ $input == 'y' ] || [ $input == 'Y' ];then
+		sudo apt-get install vsftpd xinetd
+		sudo service vsftpd stop
+		sudo cp "$SHELL_TOOLS/conf/vsftpd.conf" /etc/vsftpd.conf
+		sudo cp "$SHELL_TOOLS/conf/vsftpd" /etc/xinetd.d/vsftpd
+		sudo mkdir /var/ftp 1>/dev/null 2>&1
+		sudo chgrp ftp /var/ftp 1>/dev/null 2>&1
+		sudo usermod -d /var/ftp ftp 1>/dev/null 2>&1
+		sudo chmod 755 /var/ftp
+        while [ "$user" == '' ]
+		do
+			read -p "chroot_local_user:" user
+		done
+		sudo echo "$user" > /etc/vsftpd.chroot_list
+		sudo /etc/init.d/xinetd restart
+	fi
+fi

@@ -1,0 +1,30 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2012-01-08
+#describe:ant
+
+ANT_FILE="apache-ant-1.9.6-bin.tar.gz"
+ANT_FOLDER="apache-ant-1.9.6"
+ANT_URL="http://dl.jhat.pw/java/${ANT_FILE}"
+ANT_INSTALL="/usr/lib/java"
+ANT_PATH="${ANT_INSTALL}/${ANT_FOLDER}"
+ANT_HOME="${ANT_INSTALL}/ant"
+
+BASHRC="/etc/bash.bashrc"
+
+type ant > /dev/null 2>&1
+if [ $? != 0 ];then
+    if [ ! -d "$ANT_INSTALL" ]; then
+        sudo mkdir "$ANT_INSTALL"
+    fi
+    if [ ! -f "$ANT_FILE" ]; then
+        wget "$ANT_URL"
+    fi
+
+    sudo tar xf "$ANT_FILE" -C "$ANT_INSTALL"
+    sudo ln -s "$ANT_PATH" "$ANT_HOME"
+
+	sudo su -c "echo 'export ANT_HOME=${ANT_HOME}' >> '$BASHRC'"
+    sudo su -c "echo 'export PATH=\$PATH:\$ANT_HOME/bin' >> '$BASHRC'"
+fi

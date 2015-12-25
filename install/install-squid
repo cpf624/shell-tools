@@ -1,0 +1,32 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2012-01-07
+#describe:squid
+
+SHELL_TOOLS=$(dirname "$0")
+conf=/etc/squid3/squid.conf
+
+if [ "$(dpkg -l | grep squid3)" == '' ];then
+	read -p "install squid3?[y/n]" input
+	if [ $input == 'y' ] || [ $input == 'Y' ];then
+		sudo apt-get install squid3
+		sudo cp "$conf" "$conf.bak"
+		sudo cp "$SHELL_TOOLS/conf/squid.conf" "$conf"
+		read -p "webmaster(emial):" webmaster
+		sudo sed -i "s/^cache_mgr$/cache_mgr $webmaster/g" "$conf"
+		while [ "$user" == '' ]
+		do
+			read -p "user:" user
+		done
+		while [ "$password" == '' ]
+		do
+			stty -echo
+			read -p "password:" password
+			stty echo
+			echo ''
+		done
+		sudo echo "$user:$password" > /etc/squid3/digpass
+		sudo /etc/init.d/squid3 restart
+	fi
+fi

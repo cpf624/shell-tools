@@ -1,0 +1,15 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2011-07-23
+#describe:
+
+if [ $# -eq 0 ];then
+	echo "Please input project name"
+else
+	mkdir -p "$1/src"
+	mkdir -p "$1/bin/classes"
+	file_xml_ant $1
+	mv build.xml $1
+	cd "$1/src"
+fi

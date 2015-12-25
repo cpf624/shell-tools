@@ -1,0 +1,33 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2011-08-08
+#describe:
+
+if [ $# -eq 0 ];then
+	echo "[m]Please input file name"
+	exit 0
+fi
+
+file="$1.m"
+cat > "$file" << EOF
+/**
+ * author:$(whoami)
+ * email:$email
+ * date:$(date +%Y-%m-%d)
+ * describe:
+ */
+
+#import <Foundation/Foundation.h>
+
+int main(int argc,const char *argv[]){
+    
+    NSLog(@"$1");
+
+    return 0;
+}
+EOF
+
+if [ "$2" != "-n" ];then
+	vi "$file"
+fi

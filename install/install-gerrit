@@ -1,0 +1,134 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2012-08-28
+#describe:
+
+MYSQL_USER=root
+MYSQL_PASSWORD=root
+
+GERRIT_DATABASE=gerrit
+GERRIT_USER=gerrit
+GERRIT_PASSWORD=gerrit
+GERRIT_HOST=$(/sbin/ifconfig -a|grep inet|grep -v 127.0.0.1|grep -v inet6|awk '{print $2}'|tr -d "addr:"|head -n 1)
+GERRIT_SSH_PORT=29418
+GERRIT_HTTP_PORT=8080
+LDAP_HOST=172.16.255.253
+SMTP_SERVER=smtp.163.com
+SMTP_USER=plugintools@163.com
+SMTP_FROM="Code Review <$SMTP_USER>"
+SMTP_PASSWORD=p_123456
+
+GERRIT_VERSION="2.4.2"
+GERRIT_FILE="gerrit-${GERRIT_VERSION}.war"
+GERRIT_URL="http://gerrit.googlecode.com/files/${GERRIT_FILE}"
+GERRIT_INSTALL="${HOME}/SoftWare/gerrit"
+
+read -p "install gerrit?[y/n]" input
+if [ $input == 'y' ] || [ $input == 'Y' ]; then
+    #下载Gerrit
+    if [ ! -f "$GERRIT_FILE" ]; then
+        wget "$GERRIT_URL"
+    fi
+
+    #创建数据库
+    mysql -u$MYSQL_USER -p$MYSQL_PASSWORD << EOF
+drop database if exists $GERRIT_DATABASE;
+create database $GERRIT_DATABASE;
+grant all privileges on $GERRIT_USER.* to '$GERRIT_USER'@'localhost' IDENTIFIED BY '$GERRIT_PASSWORD';
+EOF
+
+    mkdir -p "$GERRIT_INSTALL/etc"
+    #设置Gerrit配置
+    cat > "${GERRIT_INSTALL}/etc/gerrit.config" <<EOF
+[gerrit]
+	basePath = git
+	canonicalWebUrl = http://$GERRIT_HOST/
+[database]
+	type = MYSQL
+	hostname = localhost
+	database = gerrit
+	username = gerrit
+[auth]
+	type = LDAP_BIND
+	logoutUrl = http://$GERRIT_HOST/
+[ldap]
+	server = ldaps://$LDAP_HOST
+	sslVerify = false
+	accountBase = DC=baina,DC=com
+	accountScope = subtree
+	accountPattern = (&(objectClass=person)(userPrincipalName=\${username}))
+	accountFullName = displayName
+	accountEmailAddress = mail
+	referral = follow
+	groupBase = DC=baina,DC=com
+[sendemail]
+	enable = true
+	smtpServer = $SMTP_SERVER
+    smtpUser = $SMTP_USER
+    from = "$SMTP_FROM"
+[container]
+	user = $USER
+	javaHome = $JAVA_HOME/jre
+[sshd]
+	listenAddress = *:$GERRIT_SSH_PORT
+[httpd]
+	listenUrl = proxy-http://$GERRIT_HOST:$GERRIT_HTTP_PORT/
+[cache]
+	directory = cache
+[accounts]
+    visibility = SAME_GROUP
+EOF
+
+    #Mysql,smtp密码
+    cat > "${GERRIT_INSTALL}/etc/secure.config" <<EOF
+[database]
+	password = gerrit
+[auth]
+	registerEmailPrivateKey = mQDHTi4NZFOZLeo+sJB9weYZip/VgGjVcjw=
+[sendemail]
+	smtpPass = $SMTP_PASSWORD
+EOF
+
+    #配置Apache代理
+    cat > /tmp/gerrit <<EOF
+<VirtualHost *:80>
+    ServerName localhost
+
+    ProxyRequests Off
+    ProxyVia Off
+    ProxyPreserveHost On
+
+    <Proxy *>
+          Order deny,allow
+          Allow from all
+    </Proxy>
+
+    ProxyPass / http://$GERRIT_HOST:$GERRIT_HTTP_PORT/
+</VirtualHost>
+EOF
+    sudo mv /tmp/gerrit /etc/apache2/sites-enabled/gerrit
+    sudo a2enmod proxy_http
+    sudo service apache2 restart
+
+    #安装Gerrit
+    java -jar "$GERRIT_FILE" init -d "$GERRIT_INSTALL" <<EOF
+EOF
+
+    #添加依赖库
+    #MYSQL_CONNECTOR_VERSION="5.1.10"
+    #MYSQL_CONNECTOR_FILE="mysql-connector-java-${MYSQL_CONNECTOR_VERSION}.jar"
+    #MYSQL_CONNECTOR_URL="http://repo2.maven.org/maven2/mysql/mysql-connector-java/${MYSQL_CONNECTOR_VERSION}/${MYSQL_CONNECTOR_FILE}"
+    #mv "$MYSQL_CONNECTOR_FILE" "${GERRIT_INSTALL}/lib"
+    #wget "$MYSQL_CONNECTOR_URL"
+
+    BCPROV_FILE="bcprov-jdk16-144.jar"
+    BCPROV_URL="http://www.bouncycastle.org/download/${BCPROV_FILE}"
+    if [ ! -f "$BCPROV_FILE" ]; then
+        wget "$BCPROV_URL"
+    fi
+    mv "$BCPROV_FILE" "${GERRIT_INSTALL}/lib"
+
+    #启动Gerrit
+    ${GERRIT_INSTALL}/bin/gerrit.sh start
+fi

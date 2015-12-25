@@ -1,0 +1,111 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2011-07-25
+#describe:
+
+package=""
+interface=""
+project=""
+extends=""
+
+#1:package,2:interface,3:project,4:author,5:email,6:date,7:extends
+function create(){
+	echo -n "" > $2.java
+	if [ "$1" != "package" ];then
+		echo -e "package $1;\n" >> $2.java
+	fi
+	echo "/**" >> $2.java
+	echo " * @Project    $3" >> $2.java
+	if [ "$1" == "package" ];then
+		echo " * @File       $2.java" >> $2.java
+	else
+		echo " * @File       $1.$2.java" >> $2.java
+	fi
+    echo " * @Author     $4" >> $2.java
+	echo " * @Date       $6" >> $2.java
+    echo " * @Email      $5" >> $2.java
+    echo " * @Describe: " >> $2.java
+	echo -e " */\n" >> $2.java
+	echo -n "public interface $2" >> $2.java
+	if [ "$7" != "extends" ];then
+		echo -n " extends $7" >> $2.java
+	fi
+	echo -e "{\n\n\n}" >> $2.java
+}
+
+function check(){
+	if [ "$interface" == "" ];then
+		echo "interface name couldn't null"
+		return 0
+	fi
+	if [ "$package" == "" ];then
+		package="package"
+	fi
+	if [ "$project" == "" ];then
+		project="project"
+	fi
+	if [ "$extends" == "" ];then
+		extends="extends"
+	fi
+	return 1
+}
+
+function help_info(){
+	echo "Usage file_java [-options args]"
+	echo ""
+	echo "-p package name"
+	echo "-c interface name"
+	echo "-P project name"
+	echo "-e extends class"
+	echo "-h help info"
+}
+
+if [ $# -eq 0 ];then
+	read -p "Package:" package
+	read -p "Interface:" interface
+	read -p "Project:" project
+	read -p "Extends:" extends
+elif [ "$1" == "-h" ];then
+	help_info
+elif [ $(($#%2)) -eq 0 ];then
+	arg=($@)
+	declare -i n=0
+	while [ $n -lt $# ]
+	do
+		case ${arg[$n]} in
+		"-p")
+			package=${arg[$n+1]}
+			;;
+		"-c")
+			interface=${arg[$n+1]}
+			;;
+		"-P")
+			project=${arg[$n+1]}
+			;;
+		"-e")
+			if [ "$extends" != "" ];then
+				extends="$extends,${arg[$n+1]}"
+			else
+				extends="${arg[$n+1]}"
+			fi
+			;;
+		esac
+		n=$n+2
+	done
+else
+	echo "Argments error!"
+	help_info
+fi
+
+check
+
+if [ $? -eq 1 ];then
+	email=$email
+	if [ "$email" == "" ];then
+		email="email@site.com"
+	fi
+	create $package $interface $project $(whoami) $email $(date "+%Y-%m-%d") $extends
+	vi $interface.java
+fi
+

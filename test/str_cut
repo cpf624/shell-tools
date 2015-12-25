@@ -1,0 +1,18 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2011-08-19
+#describe:
+
+str="$*"
+#截取后缀
+echo ${str##*.}
+#截取后缀之前的字符窜
+echo ${str%.*}
+#截取协议http,https,ftp...
+echo ${str%%:*}
+#按,拆分字符窜
+echo a,b,c | awk -F',' '{for(i=1;i<=NF;i++){print $i}}'
+echo xhome.org | awk -F'.' '{for(i=1;i<=NF;i++){print $i}}'
+
+echo $o | awk -F',' '{for(i=1;i<=NF;i++){system("setfacl -m o:"$i":'$acl' '$file'")}}'

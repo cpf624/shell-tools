@@ -1,0 +1,70 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2011-08-07
+#describe:字符集转换
+
+function usage(){
+	echo 'Usage:file_iconv -p PATH [options]'
+	echo '	-f fromCharset,default GBK'
+	echo '	-t toCharset,defualt UTF8'
+	echo '	-h help info'
+}
+#转换文件数
+declare -i count=0
+OPTERR=0
+from="GBK"
+to="UTF8"
+path=""
+while getopts "hp:f:t:" option
+do
+	case $option in
+	f)
+		from="$OPTARG"
+	;;
+	t)
+		to="$OPTARG"
+	;;
+	h)
+		usage
+		exit 0
+	;;
+	p)
+		path="$OPTARG"
+	;;
+	\?)
+		usage
+		exit 0
+	;;
+	esac
+done
+if [ "$path" == "" ];then
+	usage
+	exit 2
+fi
+function traverse(){
+	for file in "$1"/*
+	do
+		#排除以*结尾的file
+		if [ $(echo "$file" | grep '*$' -c) -gt 0 ];then
+			continue
+		elif [ -d "$file" ];then
+			traverse "$file"
+		elif [ -f "$file" ];then
+			iconv -f "$from" -t "$to" "$file" -o "$file"
+			count=$count+1
+		fi
+	done
+}
+
+#如果目录不存在否则直接退出
+if [ -f "$path" ];then
+	iconv -f "$from" -t "$to" "$path" -o "$path"
+	count=$count+1
+elif [ -d "$path" ];then
+	traverse "$path"
+else
+	exit 0
+fi
+#打印统计信息
+echo "iconv(all):$count"

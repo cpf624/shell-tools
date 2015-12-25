@@ -1,0 +1,223 @@
+#!/bin/bash
+
+#电子科技大学清水河校区上网认证脚本
+#版本：2.0 Alaph
+#作者：LiLi Jhat
+#GPL Licence
+#2009年3月7日
+#2011年12月17日
+#由Jhat加入固定IP拨号功能，并提供安静退出选项
+
+#RP=/etc/network
+#初始化默认文件路径和网络接口
+LAN_CONF=${HOME}/.lan.conf #默认的局域网配置文件路径
+INTERNET_CONF=${HOME}/.internet.conf #默认的外网配置文件路径
+NETWORK_INTERFACE=eth0 #默认的网络接口
+CONF=$LAN_CONF #脚本将要处理的配置文件，默认为局域网配置文件
+CONF_FLAG=0 #用0表示局域网配置文件，1表示因特网配置文件，2表示用户指定的配置文件
+STATIC=0	#用1表示使用固定IP,默认使用动态IP
+QUIET=0 #用0出错后提示输入，1表示出错后不提示输入
+LOG=${HOME}/.my-8021-net.log #简单的日志文件
+
+#设定退出错误号
+OK=0 #正常退出
+SYNTAX_ERROR=1 #语法错误
+CANNOT_GET_IP=2 #无法获取IP
+NO_FILE=3 #找不到文件
+TEST_ERROR=4 #测试时的错误，在实际使用中不会遇到
+EXIT_QUIET=5	#安静退出
+
+#断开网络的函数
+logoff()
+{
+    wpa_cli logoff > /dev/null 2>&1 #下线
+    wpa_cli terminate > /dev/null 2>&1 #关闭进程
+    dhclient -r $NETWORK_INTERFACE > /dev/null 2>&1 #释放IP
+}
+
+#帮助信息
+return_help()
+{
+    echo "这是LiLi写的清水河上网脚本"
+    echo "	-h : 返回这个帮助信息"
+    echo "	-i : 网卡接口，默认为eth0"
+    echo "	-l : 连接局域网，为默认方式"
+    echo "	-w : 连接因特网"
+    echo "	-c : 指定配置文件连网"
+    echo "	-d : 断网"
+    echo "	-L : 重新生成内网配置文件"
+    echo "	-W : 重新生成外网配置文件"
+	echo " 	-s : 查询当前连接状态"
+	echo "	-S : 使用固定IP"
+	echo "	-q : 出错后不提示输入"
+	echo "	-a : 查看通过此脚本上网的日志"
+	echo "	-A : 清除日志文件"
+    echo "以默认方式上内网可以不接任何选项参数"
+}
+
+
+#初始化配置文件的函数,需要区分内网和外网的配置文件
+init_configure()
+{
+    echo "请输入你的用户名："
+    read USER_NAME
+    echo "请输入密码："
+    read USER_PASSWD
+    echo "正在初始化……"
+    echo "ctrl_interface=/var/run/wpa_supplicant" > $1
+    echo "#ctrl_interface_group=wheel" >> $1
+    echo "ap_scan=0" >> $1
+    echo "network={" >> $1
+    echo "	key_mgmt=IEEE8021X" >> $1
+    echo "	eap=MD5" >> $1
+    if [ $2 = 0 ]
+    then
+    	echo "	identity=\"$USER_NAME@local\"" >> $1
+    else
+	echo "	identity=\"$USER_NAME\"" >> $1
+    fi
+    echo "	password=\"$USER_PASSWD\"" >> $1
+    echo "	eapol_flags=0" >> $1
+    echo "}" >> $1
+	echo "初始化完成"
+    chmod 000 $1 # 保证账号的安全
+}
+
+show_state() #显示当前连接状态
+{
+	ps aux | grep wpa_supplicant | grep -v grep > /dev/null #有无认证进程
+	if [ $? = 0 ]
+	then
+		cIP=`ifconfig $NETWORK_INTERFACE | grep "inet " | awk {'print $2'} | awk -F: {'print $2'}`
+		echo "已向系统提交认证，$NETWORK_INTERFACE 的IP是$cIP "
+	else
+		echo "未通过8021认证连接网络"
+	fi
+}
+
+#安静退出
+exit_quiet()
+{
+	if [ $QUIET = 1 ]
+	then
+	exit $EXIT_QUIET
+	fi
+}
+
+while getopts ":hi:lwc:dLWsSqaA" Option #对选项的处理
+do
+    case $Option in
+	h ) return_help && exit $OK;;
+	i ) NETWORK_INTERFACE=$OPTARG;;
+	l ) CONF=$LAN_CONF && CONF_FLAG=0;;
+	w ) CONF=$INTERNET_CONF && CONF_FLAG=1;;
+	c ) CONF=$OPTARG && CONF_FLAG=2;;
+	d ) logoff && echo "网络已断开" && exit $OK;;
+	L ) init_configure $LAN_CONF 0  && exit $OK;;
+	W ) init_configure $INTERNET_CONF 1 && exit $OK;;
+	s ) show_state && exit $OK;;
+	S ) STATIC=1;;
+	q ) QUIET=1;;
+	a ) cat $LOG && exit $OK;;
+	A ) echo > $LOG && exit $OK;;
+    esac
+done
+
+#是否已经提交wpa认证,如果是，将中断原有进程
+ps aux | grep wpa_supplicant | grep -v grep > /dev/null
+if [ $? = 0 ]
+then
+    logoff
+fi
+
+#判断配置文件是否存在
+if [ -e $CONF ]
+then
+    wpa_supplicant -B -i $NETWORK_INTERFACE -c $CONF -D wired > /dev/null 2>&1
+    if [ $? = 0 ]
+    then
+	:
+    else
+	if [ $CONF_FLAG = 2 ]
+	then
+	    echo "你指定的配置文件存在语法错误，请自行检查"
+	    echo "脚本退出"
+	    exit $SYNTAX_ERROR
+	fi
+	exit_quiet
+	echo "配置文件存在语法错误，是否删除并重新配置[y/n]:"
+	read IsDelete
+	if [ "$IsDelete" = "y" -o "$IsDelete" = "Y" -o "$IsDelete" = "yes" ]
+	then
+	    mv $CONF ${CONF}.bak
+	    echo "配置文件已删除，正在重新生成"
+	    init_configure $CONF $CONF_FLAG
+	    echo "用新的配置认证"
+    	    wpa_supplicant -B -i $NETWORK_INTERFACE -c $CONF -D wired > /dev/null 2>&1
+	else
+	    echo "配置文件错误，退出程序"
+	    exit $SYNTAX_ERROR
+	fi
+    fi
+else
+	exit_quiet
+    if [ $CONF_FLAG = 2 ]
+    then
+	echo "你指定的配置文件无法找到"
+	exit $NO_FILE
+    fi
+    echo "没有找到配置文件，脚本将生成一个配置文件。你也可以按CTRL+C结束脚本"
+    init_configure $CONF $CONF_FLAG
+    echo "配置文件已生成"
+    wpa_supplicant -B -i $NETWORK_INTERFACE -c $CONF -D wired > /dev/null 2>&1
+fi
+
+if [ $STATIC = 1 ];then
+	#使用固定IP
+	wpa_supplicant -B -i $NETWORK_INTERFACE -c $CONF -D wired > /dev/null 2>&1
+	ifconfig $NETWORK_INTERFACE down > /dev/null 2>&1
+	ifconfig $NETWORK_INTERFACE up > /dev/null 2>&1
+else
+	#从DHCP服务器（网关）获取IP
+	echo "正在向网关请求IP，请稍候..."
+	dhclient -r $NETWORK_INTERFACE > /dev/null 2>&1
+	dhclient $NETWORK_INTERFACE > /dev/null 2>&1
+fi
+
+#查看IP，并判断是否有效，待改进
+IP=`ifconfig $NETWORK_INTERFACE | grep "inet " | awk {'print $2'} | awk -F: {'print $2'}`
+echo $IP | grep -v ^10.20 | grep -v ^222 | grep -v ^121 > /dev/null
+if [ $? = 0 ]
+then
+    echo "无法获取IP！"
+	echo "请检查:"
+	echo "	1.网线没有插好"
+	echo "	2.用户名和密码错误"
+	echo "	3.账号已欠费"
+	echo "	4.电信抽风"
+	if [ $CONF_FLAG = 2 ]
+	then
+		echo "脚本退出"
+		exit $CANNOT_GET_IP
+	fi
+	exit_quiet
+    echo "如果你认为是用户名密码错误，是否重新配置[y/n]"
+    read RECONFIG
+    if [ "$RECONFIG" = "y" -o "$RECONFIG" = "Y" -o "$RECONFIG" = "yes" ]
+    then
+	mv $CONF ${CONF}.bak
+	logoff
+	init_configure $CONF $CONF_FLAG
+	echo "配置文件已重新建立，请重新运行脚本"
+	exit $CANNOT_GET_IP
+    else
+	echo "连接失败，脚本退出"
+	exit $CANNOT_GET_IP
+    fi
+else
+	echo "`date`:	$IP" >> $LOG
+    echo "你已连入网络，IP是$IP"
+    exit $OK
+fi
+
+exit $TEST_ERROR

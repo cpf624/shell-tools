@@ -1,0 +1,33 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2012-01-07
+#describe: 卸载系统中不再使用的旧版本内核
+
+#获取当前使用的内核版本
+release=$(uname -r)
+#获取当前使用的内核版本号
+version=${release%-*}
+#获取系统类型
+sys=${release##*-}
+image=linux-image-$release
+header=linux-headers-$version
+
+#卸载旧版本linux-headers
+for he in $(dpkg-query -W -f='${Package}\n' | grep -P 'linux-headers-\d' | grep -v $sys)
+do
+	if [ $he != $header ];then
+		#echo $he
+		sudo apt-get autoremove --purge $he
+	fi
+done
+
+#卸载旧版本linux-image
+for im in $(dpkg-query -W -f='${Package}\n' | grep -P 'linux-image-\d')
+do
+	if [ $im != $image ];then
+		#echo $im
+		sudo apt-get autoremove --purge $im
+	fi
+done
+

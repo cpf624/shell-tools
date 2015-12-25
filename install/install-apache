@@ -1,0 +1,75 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2012-01-07
+#describe:apache
+
+SHELL_TOOLS=$(dirname "$0")
+
+default="/etc/apache2/sites-available/default"
+default_ssl="/etc/apache2/sites-available/default-ssl"
+httpd="/etc/apache2/httpd.conf"
+tomcat_home="/usr/share/tomcat6"
+java_home="/usr/lib/jvm/java-6-sun"
+workers="/etc/libapache2-mod-jk/workers.properties"
+
+if [ "$(dpkg -l | grep apache2)" == '' ];then
+	read -p "install apache2?[y/n]" input
+	if [ "$input" == 'y' ] || [ "$input" == 'Y' ];then
+		sudo apt-get install apache2
+		sudo echo 'ServerName localhost' > /etc/apache2/conf.d/localhost
+		sudo cp $default $default.bak
+		sudo cp $default_ssl $default_ssl.bak
+		sudo cp "$SHELL_TOOLS/conf/default" "$SHELL_TOOLS/conf/default-ssl" /etc/apache2/sites-available/
+		while [ "$webmaster" == '' ]
+		do
+			read -p "webmaster:" webmaster
+		done
+		sudo sed -i "s/webmaster@localhost/${webmaster}/g" $default
+		sudo sed -i "s/webmaster@localhost/${webmaster}/g" $default_ssl
+		read -p "need ssl?[y/n]" input
+		if [ "$input" == 'y' ] || [ "$input" == 'Y' ];then
+			while [ "$organization" == '' ]
+			do
+				read -p "organization:" organization
+			done
+			if [ ! -f "/etc/ssl/$organization.pem" ];then
+				ca_ssl "$organization"
+				sudo mv "$organization.pem" "$organization.crt" "$organization.key" /etc/ssl/
+			fi
+			sudo sed -i "52a \	SSLCertificateFile  /etc/ssl/$organization.crt" $default_ssl
+			sudo sed -i "53a \	SSLCertificateKeyFile  /etc/ssl/$organization.key" $default_ssl
+			sudo a2enmod ssl > /dev/null 2>&1
+			sudo a2ensite default-ssl > /dev/null 2>&1
+			read -p "auto ssl password?[y/n]" input
+			if [ "$input" == 'y' ] || [ "$input" == 'Y' ];then
+				while [ "$password" == '' ]
+				do
+					stty -echo
+					read -p "ssl password:" password
+					stty echo
+					echo ''
+				done
+				sudo echo -e "#!/bin/bash\necho $password" > /etc/apache2/pass
+				sudo chmod 500 /etc/apache2/pass
+				sudo echo 'SSLPassPhraseDialog exec:/etc/apache2/pass' >> "$httpd"
+			fi
+			read -p "all rewrite to ssl?[y/n]" input
+			if [ "$input" == 'y' ] || [ "$input" == 'Y' ];then
+				sudo sed -i "5a \	RewriteEngine On" $default
+				sudo sed -i "6a \	RewriteCond %{SERVER_PROTOCOL} \!\^https\$" $default
+				sudo sed -i "7a \	RewriteRule \^(.*) https://%{SERVER_NAME}\$1 [L,R]" $default
+				sudo sed -i "8a \ " $default
+				sudo a2enmod rewrite > /dev/null 2>&1
+			fi
+			read -p "install mod_jk?[y/n]" input
+			if [ "$input" == 'y' ] || [ "$input" == 'Y' ];then
+				sudo apt-get install libapache2-mod-jk
+				sudo echo -e "JkWorkersFile   /etc/libapache2-mod-jk/workers.properties\nJkLogFile   /var/log/apache2/mod_jk.log\nJkLogLevel  info" >>  "$httpd"
+				sudo sed -i "s/^workers\.tomcat_home=.*/workers.tomcat_home="${tomcat_home//\//\\/}"/g" "$workers"
+				sudo sed -i "s/^workers\.java_home=.*/workers.java_home="${java_home//\//\\/}"/g" "$workers"
+			fi
+		fi
+		sudo /etc/init.d/apache2 restart
+	fi
+fi

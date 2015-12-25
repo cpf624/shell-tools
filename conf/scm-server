@@ -1,0 +1,29 @@
+#!/bin/bash
+#service of scm-server
+
+export JAVA_HOME=/usr/lib/jvm/java-6-sun
+export CLASSPATH=.:$JAVA_HOME/lib
+export PATH=$PATH:$JAVA_HOME/bin
+export SCM_HOME=$SCM_HOME
+
+scm="$SCM_SERVER_BIN"
+
+function usage(){
+	echo 'Usage: /etc/init.d/scm-server { start | stop | restart }'
+}
+
+case "$*" in
+	start)
+		$scm start
+		;;
+	stop)
+		$scm stop
+		;;
+	restart)
+		$scm stop
+		$scm start
+		;;
+	*)
+		usage
+		;;
+esac

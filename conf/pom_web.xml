@@ -1,0 +1,100 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>${groupId}</groupId>
+    <artifactId>${artifactId}</artifactId>
+    <packaging>war</packaging>
+    <version>1.0</version>
+    <name>${artifactId}</name>
+
+    <properties>
+        <xhome-libs.version>1.0</xhome-libs.version>
+        <junit.version>4.11</junit.version>
+        <jetty.version>9.1.0.RC2</jetty.version>
+        <javax.servlet.version>3.1.0</javax.servlet.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <java.version>1.7</java.version>
+        <java.encoding>UTF-8</java.encoding>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.xhome</groupId>
+            <artifactId>xhome-libs</artifactId>
+            <version>${xhome-libs.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
+            <version>${javax.servlet.version}</version>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>${artifactId}-${project.version}</finalName>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.eclipse.jetty</groupId>
+                    <artifactId>jetty-maven-plugin</artifactId>
+        			<configuration>
+        				<!-- 热部署检测间隔时间 -->
+                        <scanIntervalSeconds>10</scanIntervalSeconds>
+                        <webApp>
+                            <contextPath>/${project.artifactId}</contextPath>
+                        </webApp>
+                        <httpConnector>
+                            <port>8081</port>
+                        </httpConnector>
+        			</configuration>
+                    <version>${jetty.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <configuration>
+                        <source>${java.version}</source>
+                        <target>${java.version}</target>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <configuration>
+                        <additionalClasspathElements>
+                            <additionalClasspathElement>src/main/resources</additionalClasspathElement>
+                        </additionalClasspathElements>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-war-plugin</artifactId>
+                    <!--
+                    <configuration>
+                        <webResources>
+                            <resource>
+                                <directory>src/main/webapp/</directory>
+                                <filtering>true</filtering>
+                                <excludes>
+                                    <exclude>index.html</exclude>
+                                </excludes>
+                            </resource>
+                        </webResources>
+                        <packagingExcludes>ex.html</packagingExcludes>
+                    </configuration>
+                    -->
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+</project>
+

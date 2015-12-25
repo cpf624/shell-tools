@@ -1,0 +1,12 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2012-01-08
+#describe:mercurial
+
+if [ "$(dpkg -l | grep mercurial-server)" == '' ];then
+	read -p "install mercurial-server?[y/n]" input
+	if [ $input == 'y' ] || [ $input == 'Y' ];then
+		sudo apt-get install mercurial-server
+	fi
+fi

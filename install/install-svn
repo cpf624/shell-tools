@@ -1,0 +1,12 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2012-01-08
+#describe:svn
+
+if [ "$(dpkg -l | grep subversion)" == '' ];then
+	read -p "install subversion?[y/n]" input
+	if [ $input == 'y' ] || [ $input == 'Y' ];then
+		sudo apt-get install subversion
+	fi
+fi

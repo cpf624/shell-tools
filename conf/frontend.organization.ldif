@@ -1,0 +1,48 @@
+dn: ${bdn}
+objectClass: top
+objectClass: dcObject
+objectclass: organization
+o: ${organization}
+description: ${organization} LDAP
+
+dn: cn=${admin},${bdn}
+objectClass: simpleSecurityObject
+objectClass: organizationalRole
+cn: ${admin}
+description: ${organization} LDAP administrator
+userPassword: ${admin_password}
+
+dn: ou=people,${bdn}
+objectClass: organizationalUnit
+ou: people
+
+dn: ou=groups,${bdn}
+objectClass: organizationalUnit
+ou: groups
+
+dn: uid=${user},ou=people,${bdn}
+objectClass: inetOrgPerson
+objectClass: posixAccount
+#objectClass: shadowAccount
+uid: ${user}
+sn: ${user}
+cn: ${user}
+givenName: ${user}
+displayName: ${user}
+uidNumber: 1000
+gidNumber: 10000
+userPassword: ${user_password}
+loginShell: /bin/bash
+homeDirectory: /home/${user}
+#shadowExpire: -1
+#shadowFlag: 0
+#shadowWarning: 7
+#shadowMin: 8
+#shadowMax: 999999
+#shadowLastChange: 10877
+o: ${organization}
+
+dn: cn=${group},ou=groups,${bdn}
+objectClass: posixGroup
+cn: ${group}
+gidNumber: 10000

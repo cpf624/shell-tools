@@ -1,0 +1,21 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2011-12-23
+#describe: 遍历目录
+
+function traversal(){
+	tf="$1"
+	#删除最后一个'/'
+	tf=${tf%/}
+	#exit 0
+	for file in "$tf"/*
+	do
+		echo  "$file"
+		if [ -d "$file" ];then
+			traversal "$file"
+		fi
+	done
+}
+
+traversal $*

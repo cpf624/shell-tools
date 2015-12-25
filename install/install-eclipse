@@ -1,0 +1,34 @@
+#!/bin/bash
+# Author:   jhat
+# Email:    cpf624@126.com
+# Date:     2013-08-24
+# Describe:
+
+ECLIPSE_FILE="eclipse-jee-kepler-R-linux-gtk-x86_64.tar.gz"
+ECLIPSE_URL="ftp://xhomestudio.org/Software/Eclipse/${ECLIPSE_FILE}"
+ECLIPSE_INSTALL="${HOME}/SoftWare"
+ECLIPSE_FORDER="eclipse"
+ECLIPSE_HOME="${ECLIPSE_INSTALL}/${ECLIPSE_FORDER}"
+ECLIPSE_DESKTOP="${HOME}/Desktop/eclipse.desktop"
+
+read -p "install eclipse[y/n]" input
+if [ "$input" == 'y' ]; then
+    if [ ! -f "$ECLIPSE_FILE" ]; then
+        wget "$ECLIPSE_URL"
+    fi
+    tar xf "$ECLIPSE_FILE"
+    mkdir -p "$ECLIPSE_INSTALL"
+    mv "$ECLIPSE_FORDER" "$ECLIPSE_INSTALL"
+    
+    cat >> "$ECLIPSE_DESKTOP" <<EOF
+[Desktop Entry]
+Type=Application
+Name=Eclipse
+Comment=Eclipse Integrated Development Environment
+Icon=${ECLIPSE_HOME}/icon.xpm
+Exec=${ECLIPSE_HOME}/eclipse
+Terminal=false
+Categories=Development;IDE;Java;
+EOF
+    chmod a+x "$ECLIPSE_DESKTOP"
+fi

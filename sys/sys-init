@@ -1,0 +1,76 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2012-01-07
+#describe:安装系统后，安装、卸载、配置必要的软件
+
+MYIDE=$(dirname "$0")
+
+user="${HOME##/*/}"
+
+bash_aliases="$HOME/.bash_aliases"
+cp "$MYIDE/conf/bash_aliases" "$bash_aliases"
+chmod a-x "$bash_aliases"
+
+bashrc="$HOME/.bashrc"
+while [ "$email" == '' ]
+do
+	read -p "email:" email
+done
+echo "export email=$email" >> "$bashrc"
+
+#创建项目目录
+project="$HOME/Documents/Projects"
+if [ ! -d "$project" ];then
+	mkdir -p "$project"
+fi
+chown -R "$user:$user" "$project"
+echo "export project=$project" >> "$bashrc"
+
+#vim配置文件
+vimrc="$HOME/.vimrc"
+cp "$MYIDE/conf/vimrc" "$vimrc"
+chmod a-x "$vimrc"
+chown "$user:$user" "$vimrc"
+vim="$HOME/.vim"
+mkdir "$vim"
+cp -r "$MYIDE/conf/vim/*" "$vim"
+chown -R "$user:$user" "$vim"
+
+#防火墙设置
+conf-iptables
+
+#安装必要的软件
+apt-get install exuberant-ctags vim openssh-server sysv-rc-conf nmap tree build-essential cgdb rar unrar
+
+#卸载必要的软件
+read -p "remove unuseful software?[y/n]" re
+if [ $re == 'y' ] || [ $re == 'Y' ];then
+	sudo apt-get autoremove --purge aisleriot brasero empathy eog evolution f-spot gbrainy gnome-mahjongg gnome-media gnome-sudoku gwibber pitivi quadrapassel system-config-printer-gnome tomboy
+fi
+
+#安装ubuntu-desktop所需常用软件
+read -p "install useful software for ubuntu-desktop?[y/n]" input
+if [ $input == 'y' ] || [ $input == 'Y' ];then
+	sudo apt-get install cryptsetup gpicview nautilus-actions nautilus-filename-repairer nautilus-open-terminal
+    # sudo apt-get install filezilla gimp 
+	install-chrome	#Google-Chrome
+fi
+
+install-mysql	#安装mysql
+install-jdk	#安装java
+install-ant	#安装ant
+install-maven	#安装maven
+# install-apache	#安装apache2
+# install-tomcat2	#安装tomcat
+# install-ldap	#安装ldap
+# install-lam	#安装ldap-account-manager
+# install-hg	#安装tortoisehg
+# install-mercurial	#安装mercurial
+# install-svn	#安装svn
+# install-nexus	#安装sonatype-nexus
+# install-scm	#安装scm-server
+# install-redmine	#安装redmine
+# install-pptpd	#安装pptpd
+# install-squid	#安装squid
+# install-vsftpd	#安装vsftpd

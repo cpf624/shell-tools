@@ -1,0 +1,48 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2012-01-07
+#describe:pptpd
+
+SHELL_TOOLS=$(dirname "$0")
+
+if [ "$(dpkg -l | grep pptpd)" == '' ];then
+	read -p "install pptpd?[y/n]" input
+	if [ $input == 'y' ] || [ $input == 'Y' ];then
+		sudo apt-get install pptpd
+		sudo cp "$SHELL_TOOLS/conf/pptpd.conf" /etc/pptpd.conf
+		while [ "$user" == '' ]
+		do
+			read -p "user:" user
+		done
+		while [ "$password" == '' ]
+		do
+			stty -echo
+			read -p "password:" password
+			stty echo
+			echo ''
+		done
+		dup="$user	pptpd	$password	*"
+		if [ "$(grep "^$dup" /etc/ppp/chap-secrets)" == '' ];then
+			sudo echo "$dup" >> /etc/ppp/chap-secrets
+		fi
+		if [ "$(cat /proc/sys/net/ipv4/ip_forward)" != '1' ];then
+			if [ "$(grep ^net.ipv4.ip_forward=1$ /etc/sysctl.conf)" == '' ];then
+				if [ "$(grep ^#net.ipv4.ip_forward=1$ /etc/sysctl.conf)" != '' ];then
+					sudo sed -i "s/^#net.ipv4.ip_forward=1$/net.ipv4.ip_forward=1/g" /etc/sysctl.conf
+				else
+					sudo echo 'net.ipv4.ip_forward=1' >> /etc/sysctl.conf
+				fi
+			fi
+			sudo /etc/init.d/procps restart
+		fi
+		if [ "$(iptables -L -n | grep 'ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0           tcp dpt:1723')" == '' ];then
+			sudo iptables -A INPUT -p tcp --dport 1723 -j ACCEPT
+		fi
+		if	[ "$(iptables -t nat -L -n | grep 'MASQUERADE  all  --  192.168.0.0/24       0.0.0.0/0')" == '' ];then
+			sudo iptables -t nat -A POSTROUTING -s 192.168.0.0/24 -o eth0 -j MASQUERADE
+		fi
+		sudo /etc/init.d/pptpd restart
+	fi
+fi
+

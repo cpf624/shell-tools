@@ -1,0 +1,26 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2011-08-08
+#describe:
+
+if [ $# -eq 0 ];then
+	echo "[js]Please input file name"
+	exit 0
+fi
+
+file="$1.js"
+cat > "$file" <<EOF
+/**
+ * Author:   $(whoami)
+ * Date:     $(date +%Y-%m-%d)
+ * Email:    $email
+ * Home:     $home_page
+ * Describe: 
+ */
+
+EOF
+
+if [ "$2" != "-n" ];then
+	vi "$file"
+fi

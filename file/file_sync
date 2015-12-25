@@ -1,0 +1,89 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2011-08-07
+#describe:文件同步
+
+#新创建文件数
+declare -i new=0
+#更新文件数
+declare -i update=0
+#用于判断箭头方向
+dec="0"
+#提示信息
+function _help(){
+	echo "Usage: file_sync from to"
+	echo "  from:the source directory or file to sync."
+	echo "  to:the target directory or file to sync."
+}
+
+function traverse(){
+	for file in "$1"/*
+	do
+		#排除以*结尾的file
+		if [ $(echo "$file" | grep '*$' -c) -gt 0 ];then
+			continue
+		fi
+		#生成目标文件完整路径
+		toFile=$to${file#*$from}
+		if [ -d "$file" ];then
+			#如果目标目录不存在则创建
+			if [ ! -e "$toFile" ];then
+				mkdir -p "$toFile"
+			fi
+			#递归遍历
+			traverse "$file"
+		fi
+		#如果目标文件不存在
+		if [ ! -e "$toFile" ];then
+			new=$new+1
+			echo -n "sync(new):"
+		#如果文件比目标文件新
+		elif [ "$file" -nt "$toFile" ];then
+			update=$update+1
+			echo -n "sync(update):"
+		else
+		#上述两种情况不满足时直接跳过本次循环
+			continue
+		fi
+		#复制文件，并打印信息
+		cp -px "$file" "$toFile"
+		if [ "$dec" == "0" ];then
+			echo "[$file] --> [$toFile]"
+		else
+			echo "[$toFile] <-- [$file]"
+		fi
+	done
+}
+
+#校验输入参数是否正确
+if [ $# -ne 2 ];then
+	_help
+	exit 0
+fi
+
+from="$1"
+to="$2"
+#from存在，且为目录，否则直接退出
+if [ ! -d "$from" ];then
+	echo "sync(info):[$from] not exits or it's not a directory."
+	exit 0
+fi
+#判断to是否存在，如果不存在则创建目录
+if [ ! -e "$to" ];then
+	mkdir -p "$to"
+elif [ -f "$to" ];then
+	echo "sync(info):[$to] is exits,and it's a file."
+	exit 0
+fi
+
+#开始同步文件
+traverse "$from" "$to"
+temp="$to"
+to="$from"
+from="$temp"
+dec="1"
+traverse "$from" "$to"
+temp="$to"
+#打印统计信息
+echo "sync(all):new:$new,update:$update"

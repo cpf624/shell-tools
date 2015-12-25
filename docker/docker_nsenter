@@ -1,0 +1,22 @@
+#!/bin/bash
+# Author:   jhat
+# Email:    cpf624@126.com
+# Date:     2015-12-10
+# Describe:
+
+if [ $# != 1 ]; then
+    echo "docker_nsenter <container>"
+    exit
+fi
+
+type nsenter > /dev/null 2>&1
+if [ $? != 0 ]; then
+    wget https://www.kernel.org/pub/linux/utils/util-linux/v2.24/util-linux-2.24.1.tar.gz -qO - | tar -xz -C .
+    cd util-linux-2.24.1
+    ./configure --without-ncurses
+    make nsenter && sudo cp nsenter /usr/local/bin
+    rm -rf util-linux-2.24.1
+fi
+
+PID=$(sudo docker inspect --format "{{ .State.Pid }}" $1)
+sudo nsenter --target $PID --mount --uts --ipc --net --pid

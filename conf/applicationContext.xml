@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:mvc="http://www.springframework.org/schema/mvc" xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+		http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+		http://www.springframework.org/schema/context
+		http://www.springframework.org/schema/context/spring-context-3.1.xsd
+		http://www.springframework.org/schema/tx
+		http://www.springframework.org/schema/tx/spring-tx-3.1.xsd
+		http://www.springframework.org/schema/mvc
+		http://www.springframework.org/schema/mvc/spring-mvc-3.1.xsd">
+
+	<!--
+    <import resource="classpath:context-db.xml"/>
+	<import resource="classpath*:org/xhome/xauth/web/context-action.xml" />
+	<import resource="classpath*:org/xhome/xauth/web/context-freemarker.xml" />
+    -->
+
+	<!-- 自动适配Mapper -->
+	<!-- 
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<property name="basePackage" value="${groupId}.${artifactId}.dao" />
+	</bean>
+	 -->
+
+	<!-- 自动扫描组建 -->
+	<!--
+    <context:component-scan base-package="${groupId}.${artifactId}.service" />
+    -->
+	<tx:annotation-driven />
+    <mvc:annotation-driven>
+        <mvc:argument-resolvers>
+            <bean class="org.xhome.spring.mvc.extend.method.annotation.RequestAttributeMethodArgumentResolver"/>
+            <bean class="org.xhome.spring.mvc.extend.method.annotation.RequestJsonParamMethodArgumentResolver"/>
+        </mvc:argument-resolvers>
+    </mvc:annotation-driven>
+
+	<!-- 设置FreeMarker的配置文件路径 -->
+	<!-- 
+	<bean id="freemarkerConfiguration" class="org.springframework.beans.factory.config.PropertiesFactoryBean">
+    	<property name="location" value="classpath:freemarker.properties"/>
+	</bean>
+	 -->
+
+    <!-- FreeMarker转移符设置 -->
+	<bean id="fmXmlEscape" class="freemarker.template.utility.XmlEscape" />
+
+	<!-- 配置freeMarker的模板路径 -->
+	<bean id="freemarkerConfig"
+		class="org.springframework.web.servlet.view.freemarker.FreeMarkerConfigurer">
+		<property name="templateLoaderPaths">
+			<list>
+            	<!-- 模板加载路径 -->  
+            	<value>/WEB-INF/</value>
+            	<value>classpath:/META-INF/resources/WEB-INF/</value>
+        	</list> 
+		</property>
+		<property name="preferFileSystemAccess" value="false" />
+		<property name="freemarkerVariables">
+			<map>
+				<entry key="xml_escape" value-ref="fmXmlEscape" />
+                <!-- xauth-web 中的配置项模块 -->
+                <!--
+				<entry key="xconfig" value-ref="configMethodModel" />
+                -->
+			</map>
+		</property>
+		<property name="freemarkerSettings">
+			<props>
+				<prop key="default_encoding">UTF-8</prop> 
+				<prop key="locale">zh_CN</prop>
+			</props>
+		</property>
+	</bean>
+
+	<bean id="contentNegotiatingViewResolver"
+		class="org.springframework.web.servlet.view.ContentNegotiatingViewResolver">
+		<property name="order" value="1" />
+		<property name="mediaTypes">
+			<map>
+				<entry key="json" value="application/json" />
+			</map>
+		</property>
+  		<property name="defaultViews">
+			<list>
+				<bean
+					class="org.springframework.web.servlet.view.json.MappingJackson2JsonView">
+					<property name="contentType" value="application/json" />
+                    <!-- 字符集设置 -->
+                    <property name="encoding" value="UTF8" />
+                    <!-- JSON视图的返回值与@ResponseBody一致 -->
+                    <property name="extractValueFromSingleKeyModel" value="true" />
+                    <!-- 不需要渲染的model -->
+                    <property name="excludeModelKeys">
+                        <set>
+                            <value>queryBase</value>
+                        </set>
+                    </property>
+				</bean>
+			</list>
+		</property>
+	</bean>
+
+	<!-- 默认使用 FreeMarker View -->
+	<bean id="viewResolver"
+		class="org.springframework.web.servlet.view.freemarker.FreeMarkerViewResolver">
+    	<property name="order" value="2" />
+		<property name="cache" value="true" />
+		<property name="prefix" value="" />
+		<property name="suffix" value=".ftl" />
+		<!-- 避免Freemarker中文乱码 -->
+		<property name="contentType" value="text/html;charset=UTF-8" />
+		<property name="exposeRequestAttributes" value="true" />
+		<property name="exposeSessionAttributes" value="true" />
+		<!-- FTL definition -->
+		<property name="exposeSpringMacroHelpers" value="true" />
+	</bean>
+
+	<!-- 
+	<bean id="viewResolver"
+		class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<property name="prefix" value="/WEB-INF/" />
+		<property name="suffix" value=".jsp" />
+	</bean>
+	 -->
+
+</beans>

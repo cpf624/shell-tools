@@ -1,0 +1,48 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2011-11-24
+#describe:openssl证书生成
+
+OPTERR=0
+
+function usage(){
+	source tty_font
+	echo -e "Usage: ca_ssl [options] ${BOLD}organization${NORMAL}"
+	echo -e "${BOLD}-h${NORMAL}     help message like this"
+	echo -e "${BOLD}-l${NORMAL}     encryption strength,default:1024"
+	echo -e "${BOLD}-d${NORMAL}     days,default:365"
+	echo "example:ca_ssl -l 2048 -d 3650 jhat.org"
+}
+
+#确实证书文件名
+function miss(){
+	source tty_font
+	echo -e "${BOLD}missing organization${NORMAL}"
+	usage
+	exit 1
+}
+
+vnum=$#	#输入参数个数
+len=1024	#默认加密长度
+days=365	#默认证书有效期限
+
+while getopts "hl:d:" Option
+do
+	case $Option in
+	h|\?)usage&&exit 0;;
+	l)len=$OPTARG;;
+	d)days=$OPTARG;;
+	esac
+done
+
+shift $(($OPTIND -1))
+
+if [ $vnum == 0 ] || [ $vnum != 1 ] && [ $# == $vnum ];then
+	miss
+fi
+
+organization="$*"
+openssl genrsa -des3 -out "$organization.key" $len
+openssl req -new -key "$organization.key" -out "$organization.pem"
+openssl x509 -req -days $days -in "$organization.pem" -signkey "$organization.key" -out "$organization.crt"

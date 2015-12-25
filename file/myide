@@ -1,0 +1,67 @@
+#!/bin/bash
+#author:Jhat
+#email:cpf624@126.com
+#date:2011-07-13
+#describe:myide is design to create new file with template,such as java,shell,c/c++.
+#Also to create new projects like ide tools with UI.
+
+#echo help info
+function usage(){
+	echo "Usage: myide arg [-param value]"
+	echo ""
+	echo "	arg means file' name or project's name"
+	echo "	-h print this help message"
+	echo "	it's explain by extension"
+	echo "	the other param will use for creater"
+}
+
+if [ $# -eq 0 ] || [ "$1" == "-h" ];then
+	usage
+	exit 0
+fi
+file="$1"
+shift
+#判断文件是否已经存在
+if [ -f "$file" ];then
+	echo "[$file] is already exists"
+	read -p "override it?y/n" over
+	if [ "$over" != "y" ];then
+		exit 0
+	fi
+fi
+#截取文件后缀，通过后缀判断文件类型
+file_type="${file##*.}"
+#截取文件名（不包含后缀）
+file_name="${file%.*}"
+#如果无后缀当shell脚本处理
+if [ "$file_name" == "$file" ];then
+	file_shell "$file" $*
+else
+case "$file_type" in
+	sh)
+		file_shell "$file" $*
+	;;
+	java)
+		file_java -c "$file_name" $*
+	;;
+	html)
+		file_html "$file_name" $*
+	;;
+	css)
+		file_css "$file_name" $*
+	;;
+	js)
+		file_js "$file_name" $*
+	;;
+	jsp)
+		file_jsp "$file_name" $*
+	;;
+	xml)
+		file_xml "$file_name" $*
+	;;
+	*)
+		echo "Unknown file type"
+		exit 0
+	;;
+esac
+fi

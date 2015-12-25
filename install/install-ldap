@@ -1,0 +1,100 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2012-01-09
+#describe:ldap
+
+SHELL_TOOLS=$(dirname "$0")
+CONF=/etc/ldap/
+BACK="backend.organization.ldif"
+FRONT="frontend.organization.ldif"
+
+if [ "$(dpkg -l | grep slapd)" == '' ];then
+	read -p "install openldap?[y/n]" input
+	if [ $input == 'y' ] || [ $input == 'Y' ];then
+		sudo apt-get install slapd ldap-utils
+		sudo ldapadd -Y EXTERNAL -H ldapi:/// -f ${CONF}schema/cosine.ldif
+		sudo ldapadd -Y EXTERNAL -H ldapi:/// -f ${CONF}schema/nis.ldif
+		sudo ldapadd -Y EXTERNAL -H ldapi:/// -f ${CONF}schema/inetorgperson.ldif
+		
+		#设置base dn
+		while [ "$organization" == '' ]
+		do
+			read -p "organization:" organization
+		done
+		BCONF="${CONF}${BACK/organization/$organization}"
+		sudo cp "$SHELL_TOOLS/conf/$BACK" $BCONF
+		bdn="dc=${organization//\./,dc=}"
+		sudo sed -i "s/\${bdn}/"$bdn"/g" $BCONF
+	
+		#root 用户名
+		while [ "$root" == '' ]
+		do
+			read -p "root:" root
+		done
+		sudo sed -i "s/\${root}/"$root"/g" $BCONF
+		
+		#root 密码
+		stty -echo
+		while [ "$password" == '' ]
+		do
+			read -p "$root's password:" password
+		done
+		stty echo
+		echo ''
+		password=$(slappasswd -s "$password")
+		sudo sed -i "s/\${password}/"${password//\//\\/}"/g" $BCONF
+		sudo ldapadd -Y EXTERNAL -H ldapi:/// -f $BCONF
+
+		FCONF="${CONF}${FRONT/organization/$organization}"
+		sudo cp "$SHELL_TOOLS/conf/$FRONT" $FCONF
+		#base dn
+		sudo sed -i "s/\${bdn}/"$bdn"/g" $FCONF
+		#organization
+		sudo sed -i "s/\${organization}/"$organization"/g" $FCONF
+
+		#管理面用户名
+		while [ "$admin" == '' ]
+		do
+			read -p "admin:" admin
+		done
+		sudo sed -i "s/\${admin}/"$admin"/g" $FCONF
+
+		#管理员密码
+		stty -echo
+		while [ "$admin_password" == '' ]
+		do
+			read -p "$admin's password:" admin_password
+		done
+		stty echo
+		echo ''
+		admin_password=$(slappasswd -s "$admin_password")
+		sudo sed -i "s/\${admin_password}/"${admin_password//\//\\/}"/g" $FCONF
+
+		#用户名
+		while [ "$user" == '' ]
+		do
+			read -p "user:" user
+		done
+		sudo sed -i "s/\${user}/"$user"/g" $FCONF
+
+		#用户密码
+		stty -echo
+		while [ "$user_password" == '' ]
+		do
+			read -p "$user's password:" user_password
+		done
+		stty echo
+		echo ''
+		user_password=$(slappasswd -s "$user_password")
+		sudo sed -i "s/\${user_password}/"${user_password//\//\\/}"/g" $FCONF
+
+		#分组名
+		while [ "$group" == '' ]
+		do
+			read -p "group:" group
+		done
+		sudo sed -i "s/\${group}/"$group"/g" $FCONF
+		sudo ldapadd -x -D cn="$root","$bdn" -W -f $FCONF
+	fi
+fi

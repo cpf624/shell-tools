@@ -1,0 +1,169 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2012-01-11
+#describe:scm-server
+
+SHELL_TOOLS=$(dirname "$0")
+VERSION=1.28
+SCM_SERVER_OSS="scm-server-$VERSION-app.tar.gz"
+SCM_SERVER_OSS_URL="http://maven.scm-manager.org/nexus/content/repositories/releases/sonia/scm/scm-server/$VERSION/$SCM_SERVER_OSS"
+SCM_SERVER_WEB="scm-webapp-$VERSION.war"
+SCM_SERVER_WEB_URL="http://maven.scm-manager.org/nexus/content/repositories/releases/sonia/scm/scm-webapp/$VERSION/$SCM_SERVER_WEB"
+SCM_SERVER_USER="scm"
+SCM_SERVER_HOME="/var/scm-server"
+SCM_SERVER_ETC="/etc/init.d/scm-server"
+SCM_SERVER_BIN="${SCM_SERVER_HOME}/bin/scm-server"
+SCM_SERVER_PORT=8289
+WEBAPPS_HOME=/var/lib/tomcat6/webapps
+SITES=/etc/apache2/sites-available
+
+function uninstall_web(){
+	service tomcat6 stop
+	rm -rf "${WEBAPPS_HOME}/scm"
+	read -p "remove scm repositories?[y/n]" input
+	if [ "$input" == 'y' ] || [ "$input" == 'Y' ];then
+		rm -rf "$SCM_SERVER_HOME"
+	fi
+	scm='/JkMount \/scm\* ajp13_worker/d'
+	sed -i "$scm" "$SITES/default"
+	sed -i "$scm" "$SITES/default-ssl"
+	service tomcat6 start
+	service apache2 restart
+}
+
+function install_web(){
+	read -p "install scm?[y/n]" input
+	if [ $input == 'y' ] || [ $input == 'Y' ]; then
+    	if [ ! -f "$SCM_SERVER_WEB" ];then
+            wget -N "$SCM_SERVER_WEB_URL"
+        fi
+    	mkdir scm
+    	mv "$SCM_SERVER_WEB" scm
+    	cd scm
+    	jar xvf "$SCM_SERVER_WEB"
+    	mv "$SCM_SERVER_WEB" ..
+    	cd ..	
+    	mv scm "$WEBAPPS_HOME"
+    	chown -R tomcat6:tomcat6 "${WEBAPPS_HOME}/scm"
+    	mkdir "$SCM_SERVER_HOME"
+    	chown -R tomcat6:tomcat6 "$SCM_SERVER_HOME"
+    	echo -e "\nscm.home = $SCM_SERVER_HOME/.scm" >> "$WEBAPPS_HOME/scm/WEB-INF/classes/scm.properties"
+    	service tomcat6 restart
+    	character='os.environ["HGENCODING"]\ =\ "UTF-8"'
+    	hgweb="${SCM_SERVER_HOME}/.scm/cgi-bin/hgweb.py"
+    	prompt='.'
+    	while [ ! -f "$hgweb" ]
+    	do
+    		echo -en "wait$prompt\r"
+    		sleep 1
+    		prompt=.$prompt
+    	done
+    	line=$(sed -n '/import os, sys/=' "$hgweb")
+    	sed -i "${line}a$character" "$hgweb"
+    	read -p "conform with apache?[y/n]" input
+    	if [ "$input" == 'y' ] || [ "$input" == 'Y' ];then
+    		scm="	JkMount /scm\* ajp13_worker"
+    		line=$(sed -n '/<\/Directory>/=' "$SITES/default" | head -2 | tail -1)
+    		sed -i "${line}a\ ${scm//\//\\/}" "$SITES/default"
+    		line=$(sed -n '/<\/Directory>/=' "$SITES/default-ssl" | head -2 | tail -1)
+    		sed -i "${line}a\ ${scm//\//\\/}" "$SITES/default-ssl"
+    		service apache2 restart
+    	fi
+    	#rm "$SCM_SERVER_WEB"
+    fi
+}
+
+function uninstall_oss(){
+	sudo service scm-server stop
+	sudo update-rc.d -f scm-server remove
+	sudo userdel "$SCM_SERVER_USER"
+	sudo rm -rf "$SCM_SERVER_HOME"
+	sudo rm "$SCM_SERVER_ETC" 
+}
+
+function install_oss(){
+	read -p "install scm?[y/n]" input
+	if [ $input == 'y' ] || [ $input == 'Y' ]; then
+    	sudo useradd -d "$SCM_SERVER_HOME" -s /bin/sh -m "$SCM_SERVER_USER"
+    	if [ ! -f "$SCM_SERVER_OSS" ];then
+            wget -N "$SCM_SERVER_OSS_URL"
+        fi
+    	tar xf "$SCM_SERVER_OSS" -C /var
+    	sudo sed -i "s/^USER=\"\"$/USER=\""$SCM_SERVER_USER"\"/g" "$SCM_SERVER_BIN"
+    	sudo chown -R "$SCM_SERVER_USER":"$SCM_SERVER_USER" "$SCM_SERVER_HOME"
+    	sudo cp "$SHELL_TOOLS/conf/scm-server" "$SCM_SERVER_ETC"
+    	sudo sed -i "s/\$SCM_SERVER_BIN/"${SCM_SERVER_BIN//\//\\/}"/g" "$SCM_SERVER_ETC"
+    	sudo sed -i "s/\$SCM_HOME/"${SCM_SERVER_HOME//\//\\/}"/g" "$SCM_SERVER_ETC"
+    	sudo read -p "scm-server port[8289]:" port
+    	if [ $(echo $port | grep "^[0-9]*$") ];then
+    		SCM_SERVER_PORT=$port
+    	fi
+        sc="${SCM_SERVER_HOME}/conf/server-config.xml"
+        line=$(sed -n '/<Set name="forwarded">true<\/Set>/=' "$sc")
+        sudo sed -i "$(expr $line - 1)d" "$sc"
+        sudo sed -i "${line}d" "$sc"
+    	sudo sed -i "s/default=\"8080\"/default=\""$SCM_SERVER_PORT"\"/g" "$sc"
+    	sudo chmod ug+x "$SCM_SERVER_ETC"
+    	sudo update-rc.d scm-server defaults
+    	sudo service scm-server start
+    
+        sudo a2enmod proxy proxy_http rewrite
+    
+    	#character='os.environ["HGENCODING"]\ =\ "UTF-8"'
+    	#hgweb="${SCM_SERVER_HOME}/.scm/cgi-bin/hgweb.py"
+    	#prompt='.'
+    	#while [ ! -f "$hgweb" ]
+    	#do
+    	#	echo -en "wait$prompt\r"
+    	#	sleep 1
+    	#	prompt=.$prompt
+    	#done
+    	#line=$(sed -n '/import os, sys/=' "$hgweb")
+    	#sed -i "${line}a$character" "$hgweb"
+    fi
+}
+
+function usage(){
+	echo "Usage: install-scm { -i | -r } { -w | -o }"
+	echo "-i install scm-server"
+	echo "-r uninstall scm-server"
+	echo "-w web scm-server"
+	echo "-o oss scm-server"
+	echo "-h help message like this"
+}
+
+OPT="install"
+TYPE="oss"
+
+while getopts "hirwo" Option
+do
+	case $Option in
+		h | \?)usage&&exit 0;;
+		i)OPT="install";;
+		r)OPT="uninstall";;
+		w)TYPE="web";;
+		o)TYPE="oss";;
+	esac
+done
+
+if [ "$OPT" == "install" ];then
+	if [ "$TYPE" == "web" ];then
+		install_web
+	else
+		install_oss
+	fi
+else
+	if [ "$TYPE" == "web" ];then
+		uninstall_web
+	else
+		uninstall_oss
+	fi
+fi
+
+#if [ ! -f "$SCM_SERVER_ETC" ];then
+#	read -p "install scm-server?[y/n]" input
+#	if [ $input == 'y' ] || [ $input == 'Y' ];then
+#		install_oss
+#	fi
+#fi

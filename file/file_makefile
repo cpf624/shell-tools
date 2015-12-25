@@ -1,0 +1,23 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2011-08-08
+#describe:
+
+if [ $# -eq 0 ];then
+	echo "[makefile]Please input file name"
+	exit 0
+fi
+
+cat > Makefile << EOF
+run: compile
+	./run
+compile:
+	g++ $*.c -o run
+clean:
+	rm -f run
+EOF
+
+if [ "$2" == "-o" ];then
+	vi Makefile
+fi

@@ -1,0 +1,123 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2011-12-23
+#describe: 设置目录acl权限
+
+OPTERR=0
+#正常退出
+OK=0
+#缺失设置对象
+OERROR=1
+#缺失文件权限参数
+FERROR=2
+#缺失目录权限参数
+DERROR=3
+#缺失待设置的目录
+LERROR=4
+
+RECURSIV=''
+
+#帮助信息
+function _help(){
+	echo "Usage: setacl [-ugo].. .[-m] -f ... -d ... file"
+	echo "	-u	users to set acl(separate by \",\")"
+	echo "	-g	groups to set acl(separate by \",\")"
+	echo "	-o	others to set acl(separate by \",\")"
+	echo "	-m	mask to set acl"
+	echo "	-f	file access option(rwx)"
+	echo "	-d	directory access option(rwx)"
+	echo "	-R	Apply operations to all files and directories recursively"
+	echo "	-h	help message like this"
+	echo "example: setacl -u jhat -f rw -d rwx"
+}
+
+#获取输入参数
+while getopts "u:g:o:mf:d:Rh" option
+do
+	case $option in
+	h|\?)_help&&exit $OK;;
+	u)u="$OPTARG";;
+	g)g="$OPTARG";;
+	o)o="$OPTARG";;
+	m)m="Y";;
+	f)f="$OPTARG";;
+	d)d="$OPTARG";;
+	R)R="Y";;
+	esac
+done
+
+#判断是否选择设置类型(ugom)
+if [ "$u" == "" ] && [ "$g" == "" ] && [ "$o" == "" ] && [ "$m" == "" ];then
+	echo "missing set object"
+	_help
+	exit $OERROR
+fi
+#判断是否输入文件权限参数
+if [ "$f" == "" ];then
+	echo "missing file option"
+	_help
+	exit $FERROR
+fi
+#判断是否输入目录权限参数
+if [ "$d" == "" ];then
+	echo "missing directory option"
+	_help
+	exit $DERROR
+fi
+#判断是否输入目录
+shift $(($OPTIND -1))
+sf="$*"
+if [ "$sf" == "" ];then
+	echo "missing file or directory to set acl"
+	_help
+	exit $LERROR
+fi
+
+#设置相应acl权限
+function sacl(){
+	file="${file//\ /\\\ }"
+	#设置user权限
+	echo $u | awk -F',' '{for(i=1;i<=NF;i++){system("setfacl -m u:"$i":'$acl' '"$file"'")}}'
+	#设置group权限
+	echo $g | awk -F',' '{for(i=1;i<=NF;i++){system("setfacl -m g:"$i":'$acl' '"$file"'")}}'
+	#设置other权限
+	echo $o | awk -F',' '{for(i=1;i<=NF;i++){system("setfacl -m o:"$i":'$acl' '"$file"'")}}'
+	#设置mask权限
+	if [ "$m" == "Y" ];then
+		setfacl -m m:$acl "$file"
+	fi
+}
+
+#设置输入目录/文件的acl
+if [ -d "$sf" ];then
+	acl=$d
+else
+	acl=$f
+fi
+file="$sf"
+sacl
+
+#遍历设置文件夹acl权限
+function tsacl(){
+	for file in "$*"/*
+	do
+		if [ $(echo "$file" | grep '*$' -c) -gt 0 ];then
+			continue
+		fi
+		if [ -d "$file" ];then
+			acl=$d
+		else
+			acl=$f
+		fi
+		sacl
+		if [ -d "$file" ];then
+			tsacl "$file"
+		fi
+	done
+}
+
+#如果有-R参数，则遍历设置输入目录下的所有文件，并设置相应acl
+if [ "$R" == "Y" ];then
+	tsacl "$sf"
+fi

@@ -1,0 +1,14 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2012-01-07
+#describe:ubuntu-tweak
+
+if [ "$(dpkg -l | grep ubuntu-tweak)" == '' ]; then
+	read -p "install ubuntu-tweak?[y/n]" input
+	if [ $input == 'y' ] || [ $input == 'Y' ]; then
+		sudo add-apt-repository ppa:tualatrix/ppa
+		sudo apt-get update
+		sudo apt-get install ubuntu-tweak
+	fi
+fi

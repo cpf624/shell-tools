@@ -1,0 +1,196 @@
+#!/bin/bash
+#author:Jhat
+#email:cpf624@126.com
+#date:2011-07-19
+#describe:new java file
+
+package=""
+class=""
+abstract=""
+main=""
+project=""
+extends=""
+implements=""
+open=""
+import=""
+final=""
+ci="class"
+OPTERR=0
+
+function usage(){
+	echo "Usage file_java [-options args]"
+	echo ""
+	echo "-p package name"
+	echo "-c class name"
+	echo "-a abstract class(y/n)"
+	echo "-m need main method(y/n)"
+	echo "-P project name"
+	echo "-e extends class"
+	echo "-i implements class"
+	echo "-h help info"
+	echo "-n not open file"
+	echo "-f final class"
+	echo "-I interface"
+}
+
+if [ $# -eq 0 ];then
+	read -p "Package:" package
+	read -p "Name:" class
+	read -p "Abstract?y/n:" abstract
+	read -p "Main method?y/n:" main
+	read -p "final?y/n:" final
+	read -p "Project:" project
+	read -p "Extends:" extends
+	read -p "Implements:" implements
+else
+	while getopts "hp:c:amP:e:i:nfI" option
+	do
+		case $option in
+		h|\?)
+			usage
+			exit 0
+		;;
+		n)
+			open="n"
+		;;
+		p)
+			if [ "$package" != "" ];then
+				echo "too many package"
+				exit 0
+			fi
+			package="$OPTARG"
+		;;
+		c)
+			if [ "$class" != "" ];then
+				echo "too many class"
+				exit 0
+			fi
+			class="$OPTARG"
+		;;
+		P)
+			if [ "$project" != "" ];then
+				echo "too many project"
+				exit 0
+			fi
+			project="$OPTARG"
+		;;
+		f)
+			if [ "$abstract" == "y" ];then
+				echo "abstract class couldn't be final"
+				exit 0
+			fi
+			final="y"
+		;;
+		a)
+			if [ "$final" == "y" ];then
+				echo "final class couldn't be abstract"
+				exit 0
+			fi
+			abstract=y
+		;;
+		m)
+			if [ "$ci" == "interface" ];then
+				echo "interface couldn't have main method"
+				exit 0
+			fi
+			main=y
+		;;
+		I)
+			if [ "$main" == "y" ];then
+				echo "main method it's not allowed in interface"
+				exit 0
+			fi
+			if [ "$implements" != "" ];then
+				echo "interface couldn't have implements"
+				exit 0
+			fi
+			ci="interface"
+		;;
+		e)
+			if [ "$extends" != "" ];then
+				echo "too many extends class"
+				exit 0
+			fi
+			ip="${OPTARG%.*}"
+			if [ "$ip" != "$OPTARG" ];then
+				extends="${OPTARG##*.}"
+				if [ "$(echo "$import" | grep "$OPTARG")" == "" ];then
+					import="$import""\nimport $OPTARG;"
+				fi
+			else
+				extends="$OPTARG"
+			fi
+		;;
+		i)
+			if [ "$ci" == "interface" ];then
+				echo "interface couldn't have implements"
+				exit 0
+			fi
+			ip="${OPTARG%.*}"
+			if [ "$ip" != "$OPTARG" ];then
+				imp="${OPTARG##*.}"
+				if [ "$(echo "$import" | grep "$OPTARG")" == "" ];then
+					import="$import""\nimport $OPTARG;"
+				fi
+			else
+				imp="$OPTARG"
+			fi
+			if [ "$implements" != "" ];then
+				implements="$implements,$imp"
+			else
+				implements="$imp"
+			fi
+		;;
+		esac
+	done
+fi
+if [ "$class" == "" ];then
+	echo "class name couldn't null"
+	usage
+	exit 0
+fi
+java="$class.java"
+echo -n "" > "$java"
+if [ "$package" != "" ];then
+	echo -e "package $package;" >> "$java"
+fi
+if [ "$import" != "" ];then
+	echo -e "$import" >> "$java"
+fi
+echo "/**" >> "$java"
+echo " * @Project    $project" >> "$java"
+if [ "$package" != "" ];then
+	echo " * @File       $package.$java" >> "$java"
+else
+	echo " * @File       $java" >> "$java"
+fi
+echo " * @Author     $(whoami)" >> "$java"
+echo " * @Date       $(date "+%Y-%m-%d %H:%M")" >> "$java"
+echo " * @Email      $email" >> "$java"
+echo " * @Home       $home_page" >> "$java"
+echo " * @Describe: " >> "$java"
+echo -e " */\n" >> "$java"
+if [ "$abstract" == "y" ];then
+	echo -n "public abstract $ci $class" >> "$java"
+elif  [ "$final" == "y" ];then
+	echo -n "public final $ci $class" >> "$java"
+else
+	echo -n "public $ci $class" >> "$java"
+fi
+if [ "$extends" != "" ];then
+	echo -n " extends $extends" >> "$java"
+fi
+if [ "$implements" != "" ];then
+	echo -n " implements $implements" >> "$java"
+fi
+echo -e "{\n" >> "$java"
+if [ "$main" == "y" ];then
+	echo "	public static void main(String[] args){" >> "$java"
+	echo "		System.out.println(\"main\");" >> "$java"
+	echo "	}" >> "$java"
+fi
+echo -e "\n}" >> "$java"
+
+if [ "$open" != "n" ];then
+	vi "$java"
+fi

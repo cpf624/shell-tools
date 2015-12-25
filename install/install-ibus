@@ -1,0 +1,17 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2012-01-07
+#describe:IBus中文输入法
+#再 任务栏-输入法-重新启动后，即可使用
+
+if [ "$(dpkg -l | grep ibus-gtk)" == '' ];then
+	read -p "install ailurus?[y/n]" input
+	if [ $input == 'y' ] || [ $input == 'Y' ]; then
+	    sudo add-apt-repository ppa:shawn-p-huang/ppa
+	    sudo apt-get update
+	    sudo apt-get install ibus ibus-gtk ibus-qt4 ibus-pinyin ibus-pinyin-db-open-phrase
+	    sudo im-switch -s ibus >/dev/null 2>&1
+	    sudo im-switch -s ibus >/dev/null 2>&1
+    fi
+fi

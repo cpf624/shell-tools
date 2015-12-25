@@ -1,0 +1,21 @@
+#!/bin/bash
+# Author:   jhat
+# Date:     2014-03-28
+# Email:    cpf624@126.com
+# Home:     http://jhat.pw
+# Describe: 安装VIM
+
+SHELL_TOOLS=$(dirname "$0")
+
+# install vim
+sudo apt-get install exuberant-ctags vim
+
+# install  powerline font
+sudo cp "$SHELL_TOOLS/conf/Monaco_Linux-Powerline.ttf" /usr/share/fonts
+
+# install vim config
+cp "$SHELL_TOOLS/conf/vimrc" ~/.vimrc
+if [ -d ~/.vim ]; then
+    rm -rf ~/.vim
+fi
+cp -r "$SHELL_TOOLS/conf/vim" ~/.vim

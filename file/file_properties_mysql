@@ -1,0 +1,63 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2011-07-23
+#describe:
+
+SHELL_TOOLS=$(dirname "$0")
+
+fileName="mysql.properties"
+database=""
+username=""
+password=""
+OPTERR=0
+
+function usage(){
+	echo "file_properties_mysql [-options args]"
+	echo "	-d database name"
+	echo "	-u username to connect to database"
+	echo "	-p password for username"
+	echo "	-h help information just like this."
+}
+
+if [ $# -eq 0 ];then
+	usage
+	exit 0
+fi
+
+while getopts "hd:u:p:" option
+do
+	case $option in
+		h)
+			usage
+			exit 0
+		;;
+		d)
+			database="$OPTARG"
+		;;
+		u)
+			username="$OPTARG"
+		;;
+		p)
+			password="$OPTARG"
+		;;
+	esac
+done
+
+if [ "$database" == "" ];then
+	echo "please input database!"
+	exit 1
+fi
+if [ "$username" == "" ];then
+	echo "please input username!"
+	exit 2
+fi
+if [ "$password" == "" ];then
+	echo "please input password!"
+	exit 3
+fi
+
+cp "$SHELL_TOOLS/conf/$fileName" "$fileName" 
+sed -i "s/\${database}/$database/g" "$fileName"
+sed -i "s/\${username}/$username/g" "$fileName"
+sed -i "s/\${password}/$password/g" "$fileName"

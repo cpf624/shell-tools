@@ -1,0 +1,45 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2011-11-13
+#describe:批量拉取、更新项目
+
+OPTERR=0
+projectPath="$project"
+
+source tty_font
+
+function usage(){
+	echo "Usage ${BOLD}push [-p projectPath] [-u push url]${NORMAL}"
+	echo "-p projects home path,default is \$project"
+	echo "-u url home"
+	echo "-h help message like this"
+}
+
+while getopts "p:u:" Option
+do
+	case $Option in
+		p)projectPath="$OPTARG";;
+		u)url="$OPTARG";;
+		h | \?)usage&&exit 0;;
+	esac
+done
+
+if [ "$projectPath" == "" ];then
+	usage&&exit 0
+fi
+
+echo -e "$(date +%Y-%m-%d\ %H:%M:%S)\n"
+for file in "$projectPath"/*
+do
+	if [ -d "$file/.hg" ];then
+		cd "$file"
+		echo -e "${BOLD}push $file${NORMAL}"
+		if [ "$url" != '' ];then
+			hg push "$url/${file##*/}"
+		else
+			hg push
+		fi
+		cd ..
+	fi
+done

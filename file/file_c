@@ -1,0 +1,79 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2011-08-08
+#describe:
+
+OPTERR=0
+open=y
+header=n
+plus=c
+
+while getopts "hpn" option
+do
+    case $option in
+    \?)
+        echo "file_cpp [option] file"
+        echo "  -h with header file"
+        echo "  -p cpp file, default c"
+        echo "  -n do not open file"
+        exit 0
+    ;;
+    h)
+        header=y
+    ;;
+    p)
+        plus=cpp
+    ;;
+    n)
+        open=n
+    ;;
+    esac
+done
+
+if [ $OPTIND -ne $# ];then
+	echo "[c]Please input file name"
+	exit 0
+fi
+
+shift $(expr $OPTIND - 1)
+
+include=""
+if [ $header == y ]; then
+
+include="#include \"$1.h\"
+"
+cat > "$1.h" <<EOF
+/**
+ * Author:   $(whoami)
+ * Date:     $(date +%Y-%m-%d)
+ * Email:    $email
+ * Home:     $home_page
+ * Describe: 
+ */
+
+EOF
+fi
+
+cfile="$1.$plus"
+cat > "$cfile" <<EOF
+/**
+ * Author:   $(whoami)
+ * Date:     $(date +%Y-%m-%d)
+ * Email:    $email
+ * Home:     $home_page
+ * Describe: 
+ */
+
+$include#include <stdio.h>
+
+int main(int argc,const char *argv[]){
+	
+	return 0;
+}
+
+EOF
+
+if [ $open == y ];then
+	vi "$cfile"
+fi

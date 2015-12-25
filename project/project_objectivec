@@ -1,0 +1,28 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2011-07-23
+#describe:
+
+if [ $# -eq 0 ];then
+	echo "Please input project name"
+    exit 0
+fi
+
+project="$1"
+file="$project.m"
+mkdir -p "$project" 2> /dev/null
+cd "$project"
+file_m "$project"
+cat > GNUmakefile << EOF
+include \$(GNUSTEP_MAKEFILES)/common.make
+
+APP_NAME = $project
+${project}_OBJC_FILES = $file
+
+include \$(GNUSTEP_MAKEFILES)/application.make
+
+run:all
+#	openapp --debug ./\$(APP_NAME)
+	openapp ./\$(APP_NAME)
+EOF

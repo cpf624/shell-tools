@@ -1,0 +1,31 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2012-01-07
+#describe:更新系统
+
+SHELL_TOOLS=$(dirname "$0")
+
+#删除已卸载软件的配置文件
+removes=""
+for re in $(dpkg --get-selections | grep deinstall)
+do
+	if [ "$re" != "" ];then
+		removes="$removes $re"
+	fi
+done
+if [ "$removes" != '' ];then
+	dpkg --purge $removes
+fi
+
+#更新源
+read -p "update /etc/apt/sources.list?[y/n]" up_src
+if [ $up_src == 'y' ] || [ $up_src == 'Y' ];then
+    cat "$SHELL_TOOLS"/conf/sources.list | sed s/lucid/$(cat /etc/lsb-release | grep DISTRIB_CODENAME= | cut -c 18-)/g > /etc/apt/sources.list
+fi
+apt-get update
+#更新系统软件
+apt-get dist-upgrade
+
+source tty_font 
+echo -e "Please restart system and run ${BOLD}sys-clean${NORMAL} if necessary"

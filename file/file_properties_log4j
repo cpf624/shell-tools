@@ -1,0 +1,53 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2011-07-23
+#describe:
+
+SHELL_TOOLS=$(dirname "$0")
+
+fileName="log4j.properties"
+artifactId=""
+groupId=""
+OPTERR=0
+
+function usage(){
+	echo "file_properties_log4j [-options args]"
+	echo "	-a artifactId"
+	echo "	-g groupId"
+	echo "	-h help information just like this."
+}
+
+if [ $# -eq 0 ];then
+	usage
+	exit 0
+fi
+
+while getopts "ha:g:" option
+do
+	case $option in
+		h)
+			usage
+			exit 0
+		;;
+		a)
+			artifactId="$OPTARG"
+		;;
+		g)
+			groupId="$OPTARG"
+		;;
+	esac
+done
+
+if [ "$artifactId" == "" ];then
+	echo "please input artifactId!"
+	exit 1
+fi
+if [ "$groupId" == "" ];then
+	echo "please input groupId!"
+	exit 2
+fi
+
+cp "$SHELL_TOOLS/conf/$fileName" "$fileName" 
+sed -i "s/\${artifactId}/$artifactId/g" "$fileName"
+sed -i "s/\${groupId}/$groupId/g" "$fileName"

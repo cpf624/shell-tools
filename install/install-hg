@@ -1,0 +1,39 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2012-01-08
+#describe:tortoisehg
+
+SHELL_TOOLS=$(dirname "$0")
+
+if [ "$(dpkg -l | grep tortoisehg)" == '' ];then
+	read -p "install tortoisehg?[y/n]" input
+	if [ $input == 'y' ] || [ $input == 'Y' ];then
+		sudo add-apt-repository ppa:tortoisehg-ppa/releases
+        sudo add-apt-repository ppa:mercurial-ppa/releases
+        sudo apt-get update
+        sudo apt-get install mercurial tortoisehg
+		hgrc="$HOME/.hgrc"
+		cp "$SHELL_TOOLS/conf/hgrc" "$hgrc"
+		chmod a-x "$hgrc"
+        user="${HOME##/*/}"
+		chown "$user:$user" "$hgrc"
+		while [ "$username" == '' ]
+		do
+			read -p "username:" username
+		done
+		sed -i "s/\$username/"$username"/g" "$hgrc"
+		while [ "$email" == '' ]
+        do
+            read -p "email:" email
+        done
+        sed -i "s/\$email/"$email"/g" "$hgrc"
+	fi
+fi
+
+if [ "$(dpkg -l | grep tortoisehg-nautilus)" == '' ];then
+	read -p "install tortoisehg-nautilus?[y/n]" input
+	if [ $input == 'y' ] || [ $input == 'Y' ];then
+		sudo apt-get install python-nautilus tortoisehg-nautilus
+	fi
+fi

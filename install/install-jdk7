@@ -1,0 +1,48 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2013-08-24
+#describe:java
+
+JDK_FILE="jdk-7u51-linux-x64.gz"
+JDK_URL="ftp://xhomestudio.org/Software/JDK/${JDK_FILE}"
+JDK_FOLDER="jdk1.7.0_51"
+JDK_INSTALL="/usr/lib/jvm"
+JDK_PATH="${JDK_INSTALL}/${JDK_FOLDER}"
+JDK_HOME="${JDK_INSTALL}/java-7-sun"
+
+BASHRC="$HOME/.bashrc"
+OPTERR=0
+
+if [ ! -e "${JDK_HOME}" ]; then
+    input=n
+    while getopts "y" option
+    do
+        case $option in
+        y)
+            input=y
+        ;;
+        esac
+    done
+    if [ "$input" != 'y' ]; then
+        read -p "install java-7-sun?[y/N]" input
+    fi
+	if [ "$input" == 'y' ] || [ "$input" == 'Y' ]; then
+        if [ ! -f "$JDK_FILE" ];then
+            wget "$JDK_URL"
+        fi
+        tar xf $JDK_FILE
+        sudo mkdir -p "$JDK_INSTALL"
+        sudo mv "$JDK_FOLDER" "$JDK_INSTALL"
+        sudo ln -s "$JDK_PATH" "$JDK_HOME"
+
+        sudo update-alternatives --install /usr/bin/java java "$JDK_HOME/bin/java" 300
+        sudo update-alternatives --install /usr/bin/javac javac "$JDK_HOME/bin/javac" 300
+        sudo update-alternatives --config java
+	
+        echo "" >> "$BASHRC"
+        echo "export JAVA_HOME=${JDK_HOME}" >> "$BASHRC"
+        echo 'export CLASSPATH=.:$JAVA_HOME/lib' >> "$BASHRC"
+        echo 'export PATH=$PATH:$JAVA_HOME/bin' >> "$BASHRC"
+    fi
+fi

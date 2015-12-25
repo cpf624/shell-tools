@@ -1,0 +1,4 @@
+AuthName "Password Needed"
+AuthType Basic
+AuthUserFile ${pathRepos}/hgusers
+Require valid-user

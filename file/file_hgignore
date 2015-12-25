@@ -1,0 +1,21 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2012-09-24
+#describe:
+
+cat > .hgignore << EOF
+syntax:glob
+
+.classpath
+.mymetadata
+.project
+.settings
+.myeclipse
+.*.swp
+target
+mapping_record.map
+remove_record.txt
+
+syntax:regexp
+EOF

@@ -1,0 +1,27 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2011-11-23
+#describe:读取一个目录下的所有文件的权限
+#输出形式
+#-rwxrwxrwx文件名(绝对路径)
+
+declare -i count=0
+declare -i cel=0
+access=""
+folder="$1"
+if [ "$1" == "" ];then
+	folder=$PWD
+fi
+find "$folder" | xargs ls -ld > access
+while read line
+do
+	t=${line:0:1}
+	if [ $t == 'd' ] || [ $t == '-' ];then
+		echo ${line:0:10}/${line#*/}
+	else
+		flink=${line#*/}
+		echo ${line:0:10}/${flink%->*}
+	fi
+done < access
+rm access

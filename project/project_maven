@@ -1,0 +1,103 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2011-10-06
+#describe:
+
+SHELL_TOOLS=$(dirname "$0")
+
+artifactId=""
+groupId=""
+packageName=""
+other=""
+web=""
+OPTERR=0
+
+function usage(){
+	echo "projcet_maven [-options args]"
+	echo "	-a artifactId"
+	echo "	-g groupId"
+	echo "	-p packageName"
+	echo "	-w web project"
+	echo "	-o other options"
+	echo "	-h help information just like this."
+}
+
+if [ $# -eq 0 ];then
+	usage
+	exit 0
+fi
+while getopts "hwa:g:p:o:" option
+do
+	case $option in
+		h)
+			usage
+			exit 0
+		;;
+		w)
+			web="Y"
+		;;
+		a)
+			artifactId="$OPTARG"
+		;;
+		g)
+			groupId="$OPTARG"
+		;;
+		p)
+			packageName="$OPTARG"
+		;;
+		o)
+			other="$other -D$OPTARG"
+		;;
+	esac
+done
+if [ "$artifactId" == "" ];then
+	echo "please input artifactId!"
+	exit 1
+fi
+if [ "$groupId" == "" ];then
+	echo "please input groupId!"
+	exit 2
+fi
+if [ "$packageName" == "" ];then
+	packageName="$groupId.$artifactId"
+fi
+basePath="$PWD"
+artifactPath="$basePath/$artifactId"
+resourcesPath="$artifactPath/src/main/resources"
+mkdir -p "$artifactId/src/main/java/${packageName//\.//}"
+mkdir -p "$resourcesPath"
+mkdir -p "$artifactId/src/test/java/${packageName//\.//}"
+mkdir -p "$artifactId/src/test/resources"
+cd "$artifactId"
+if [ "$web" == "Y" ];then
+	cp "$SHELL_TOOLS/conf/pom_web.xml" pom.xml
+	cd "src/main"
+	mkdir -p webapp/WEB-INF
+	cd webapp
+	file_jsp index -n
+	cd WEB-INF
+	cp "$SHELL_TOOLS/conf/web.xml" web.xml
+    sed -i "s/\${project}/$artifactId/g" web.xml
+    cd "$resourcesPath"
+    file_properties_mysql -d"$artifactId" -u"$artifactId" -p"$artifactId"
+	cp "$SHELL_TOOLS/conf/logback.xml" logback.xml
+    sed -i "s/\${artifactId}/$artifactId/g" logback.xml
+    sed -i "s/\${groupId}/$groupId/g" logback.xml
+	cp "$SHELL_TOOLS/conf/sqlmap_config.xml" sqlmap_config.xml
+	cp "$SHELL_TOOLS/conf/applicationContext.xml" applicationContext.xml
+    sed -i "s/\${artifactId}/$artifactId/g" applicationContext.xml
+    sed -i "s/\${groupId}/$groupId/g" applicationContext.xml
+	cp "$SHELL_TOOLS/conf/context-db.xml" context-db.xml
+    sed -i "s/\${artifactId}/$artifactId/g" context-db.xml
+    sed -i "s/\${groupId}/$groupId/g" context-db.xml
+    cd "$artifactPath"
+	echo -e "run:\n\tmvn jetty:run -Dmaven.test.skip=true\npackage:\n\tmvn package -Dmaven.test.skip=true\nclean:\n\tmvn clean\nupdate:\n\thg pull && hg update" > Makefile
+else
+	cp "$SHELL_TOOLS/conf/pom.xml" pom.xml
+	echo -e "run:\n\tmvn exec:exec\ninstall:\n\tmvn install -Dmaven.test.skip=true\npackage:\n\tmvn package -Dmaven.test.skip=true\nclean:\n\tmvn clean" > Makefile
+fi
+sed -i "s/\${artifactId}/$artifactId/g" pom.xml
+sed -i "s/\${groupId}/$groupId/g" pom.xml
+echo -e "$artifactId\n$(date +%Y-%m-%d) -- NOW" > readme.txt
+echo "$(date +%Y-%m-%d)	create project" > update.log

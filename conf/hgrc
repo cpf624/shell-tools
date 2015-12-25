@@ -1,0 +1,16 @@
+[web]
+push_ssl=true
+cacerts=
+
+[ui]
+username = $username<$email>
+
+[tortoisehg]
+summarylen = 70
+messagewrap = 80
+pushafterci = True
+authorcolor = True
+longsummary = True
+graphlimit = 500
+copyhash = True
+changeset-expander = True

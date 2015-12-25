@@ -1,0 +1,28 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2011-11-28
+#describe:
+
+#echo $(date +%Y-%m-%d\ %H:%M:%S)
+
+prompt="."
+while [ ! -f /home/jhat/abc ]
+do
+	#printf "wait%-100s\r" $prompt
+	echo -en "wait$prompt\r"
+	sleep 0.1
+	prompt=.$prompt
+done
+echo ''
+
+exit 0
+
+read -p "num:" num
+echo $num | grep "^[0-9]*$"
+if [ $(echo $num | grep "^[0-9]*$") ];then
+	echo YES
+fi
+
+echo $num
+echo $(expr $num + 1)

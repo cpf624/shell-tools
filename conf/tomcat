@@ -1,0 +1,59 @@
+#!/bin/bash
+#service of tomcat-server
+
+export JAVA_HOME=$JAVA_HOME_PATH
+export CLASSPATH=.:$JAVA_HOME/lib
+export PATH=$PATH:$JAVA_HOME/bin
+export CATALINA_HOME=$CATALINA_HOME_PATH
+export CATALINA_BASE=$CATALINA_HOME
+
+function usage(){
+	echo 'Usage: /etc/init.d/tomcat { start | stop | restart }'
+}
+
+case "$*" in
+	start)
+        $CATALINA_HOME/bin/jsvc \
+        -user $CATALINA_USER \
+        -classpath $CATALINA_HOME/bin/bootstrap.jar:$CATALINA_HOME/bin/tomcat-juli.jar \
+        -outfile $CATALINA_BASE/logs/catalina.out \
+        -errfile $CATALINA_BASE/logs/catalina.err \
+        -Dcatalina.home=$CATALINA_HOME \
+        -Dcatalina.base=$CATALINA_BASE \
+        -Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager \
+        -Djava.util.logging.config.file=$CATALINA_BASE/conf/logging.properties \
+        org.apache.catalina.startup.Bootstrap
+		
+        if [ $? -eq 0 ]; then
+            echo "started tomcat service"
+            exit 0
+        else
+            echo "failed to start tomcat service"
+            exit 1
+        fi
+        ;;
+	stop)
+        $CATALINA_HOME/bin/jsvc \
+		-stop \
+        org.apache.catalina.startup.Bootstrap
+        
+        if [ $? -eq 0 ]; then
+            echo "stopped tomcat service"
+            exit 0
+        else
+            echo "failed to stop tomcat service"
+            exit 1
+        fi
+		;;
+	restart)
+        $0 stop
+        
+        if [ $? -eq 0 ]; then
+            $0 start  
+        fi
+        exit 0
+		;;
+	*)
+		usage
+		;;
+esac

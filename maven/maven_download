@@ -1,0 +1,53 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2012-11-13
+#describe:
+
+OPTERR=0
+#正常退出
+OK=0
+REPO="http://repo1.maven.org/maven2/"
+
+function _help(){
+cat << EOF
+Usage: maven_download -g ... -a ... -v ... [path]
+    -g groupId
+    -a artifactId
+    -v version
+    default path: ~/.m2/repository
+    example: maven_download -gorg.jhat -pjutils -v1.0
+EOF
+exit $OK
+}
+
+while getopts "g:a:v:h" option
+do
+    case $option in
+    h|\?)_help;;
+    g)groupId="$OPTARG";;
+    a)artifactId="$OPTARG";;
+    v)version="$OPTARG";;
+    esac
+done
+
+test $groupId || _help
+test $artifactId || _help
+test $version || _help
+
+shift $(($OPTIND -1))
+spath="$*"
+if [ "$spath" == "" ];then
+    spath="$HOME/.m2/repository"
+fi
+
+burl="${REPO}${groupId//.//}/${artifactId}/${version}/"
+bfile="${burl}${artifactId}-${version}"
+for f in "${bfile}.jar" "${bfile}.pom" #"${burl}maven-metadata.xml"
+do
+    wget -xcNnH --cut-dirs=1 -P $spath "$f" & 
+    wget -xcNnH --cut-dirs=1 -P $spath "$f.md5" &
+    wget -xcNnH --cut-dirs=1 -P $spath "$f.sha1" &
+done
+
+wait

@@ -1,0 +1,117 @@
+# If not running interactively, don't do anything
+[ -z "$PS1" ] && return
+
+# don't put duplicate lines in the history. See bash(1) for more options
+# ... or force ignoredups and ignorespace
+HISTCONTROL=ignoredups:ignorespace
+
+# append to the history file, don't overwrite it
+shopt -s histappend
+
+# for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
+HISTSIZE=1000
+HISTFILESIZE=2000
+
+# check the window size after each command and, if necessary,
+# update the values of LINES and COLUMNS.
+shopt -s checkwinsize
+
+# set colors
+#
+# color maps
+# a black
+# b red
+# c green
+# d brown
+# e blue
+# f magenta
+# g cyan
+# h light grey
+# A bold black, usually shows up as dark grey
+# B bold red
+# C bold green
+# D bold brown, usually shows up as yellow
+# E bold blue
+# F bold magenta
+# G bold cyan
+# H bold light grey; looks like bright white
+# x default foreground or background
+#
+# LSCOLORS index for file type
+# 1. directory
+# 2. symbolic link
+# 3. socket
+# 4. pipe
+# 5. executable
+# 6. block special
+# 7. character special
+# 8. executable with setuid bit set
+# 9. executable with setgid bit set
+# 10. directory writable to others, with sticky bit
+# 11. directory writable to others, without sticky
+export CLICOLOR=1
+export LSCOLORS=gxfxaxdxcxegedabagacad
+
+# prompt
+export PS1='\[\033[01;32m\]\u@\h\[\033[00m\] \[\033[01;34m\]\w\$\[\033[00m\] '
+# export PS1='\u@\h \w\$ '
+
+# enable color support of ls and also add handy aliases
+alias grep='grep --color=auto'
+alias fgrep='fgrep --color=auto'
+alias egrep='egrep --color=auto'
+
+# some more ls aliases
+alias ll='ls -alF'
+alias la='ls -A'
+alias l='ls -CF'
+
+# LOCALE environment set
+export LC_ALL=en_US.UTF-8  
+export LANG=en_US.UTF-8
+
+PATH=${PATH/:\/usr\/local\/bin}
+export PATH="/usr/local/bin:$PATH"
+
+# JAVA Path
+if [ -d /usr/lib/jvm/java-7-sun ]; then
+    export JAVA_HOME=/usr/lib/jvm/java-7-sun
+elif [ -d /usr/lib/jvm/java-6-sun ]; then
+    export JAVA_HOME=/usr/lib/jvm/java-6-sun
+elif [ -x /usr/libexec/java_home ]; then
+    # for mac
+    export JAVA_HOME="$(/usr/libexec/java_home)"
+fi
+if [ ! -z "$JAVA_HOME" ]; then
+    export CLASSPATH=.:$JAVA_HOME/lib
+    export PATH=$PATH:$JAVA_HOME/bin
+fi
+
+# Maven Path
+if [ -d "$HOME/Software/maven" ]; then
+    export MAVEN_HOME="$HOME/Software/maven"
+    export PATH=$PATH:$MAVEN_HOME/bin
+    MAVEN_OPTS="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=8787"
+fi
+
+# MySQL Path
+if [ ! -z mysql ] && [ -d /usr/local/mysql/bin ]; then
+    export PATH=$PATH:/usr/local/mysql/bin
+fi
+
+# XHome Studio SSH Key
+if [ -f "$HOME/.xhome.ssh" ]; then
+    ssh-add "$HOME/.xhome.ssh" > /dev/null 2>&1
+    alias sxhome='ssh xhome@xhomestudio.org'
+fi
+
+# brew path
+BREW_PREFIX=`brew --prefix`
+export PATH=$BREW_PREFIX/share/python:$BREW_PREFIX/bin/:$BREW_PREFIX/sbin:$PATH
+export PYTHONPATH=$BREW_PREFIX/lib/python2.7/site-packages:$PYTHONPATH
+
+# bash_completion
+if [ -f $(brew --prefix)/etc/bash_completion ]; then
+    . $(brew --prefix)/etc/bash_completion
+fi
+

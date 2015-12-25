@@ -1,0 +1,28 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2011-11-24
+#describe:根据rwxrwxrwx重新设置文件权限
+
+function setaccess(){
+	access=$1
+	shift 1
+	if [ $access == '-' ];then
+		chmod o-$access "$*"
+	else
+		chmod o+$access "$*"
+	fi
+}
+
+while read line
+do 
+	file=${line:10}
+	if [ -e "$file" ];then
+	r=${line:7:1}
+	setaccess $r $file
+	w=${line:8:1}
+	setaccess $w $file
+	x=${line:9:1}
+	setaccess $x $file
+	fi
+done < "$1"

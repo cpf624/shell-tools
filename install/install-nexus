@@ -1,0 +1,179 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2012-01-08
+#describe:sonatype nexus
+
+SHELL_TOOLS=/usr/local/bin
+NEXUS_VERSION=2.3.1-01
+NEXUS_FILE="nexus-${NEXUS_VERSION}"
+NEXUS_OSS="${NEXUS_FILE}-bundle.tar.gz"
+NEXUS_WEB="${NEXUS_FILE}.war"
+NEXUS_DOWNLOAD="http://www.sonatype.org/downloads"
+NEXUS_OSS_URL="${NEXUS_DOWNLOAD}/${NEXUS_OSS}"
+NEXUS_WEB_URL="${NEXUS_DOWNLOAD}/${NEXUS_WEB}"
+NEXUS_USER="nexus"
+NEXUS_HOME=/usr/share	#nexus安装目录
+NEXUS_WORK=/var/nexus	#nexus用户主目录，亦即PLEXUS_NEXUS_WORK目录
+NEXUS_ETC="/etc/init.d/nexus"
+NEXUS_PORT=8283
+WEBAPPS_HOME=/var/lib/tomcat6/webapps
+SITES=/etc/apache2/sites-available
+
+function uninstall_web(){
+	service tomcat6 stop
+	rm -rf "${WEBAPPS_HOME}/nexus"
+	read -p "remove nexus repositories?[y/n]" input
+	if [ "$input" == 'y' ];then
+		rm -rf "$NEXUS_WORK"
+	fi
+	nexus='/JkMount \/nexus\* ajp13_worker/d'
+	sed -i "$nexus" "$SITES/default"
+	sed -i "$nexus" "$SITES/default-ssl"
+	service tomcat6 start
+	service apache2 restart
+}
+
+function install_web(){
+	read -p "install nexus?[y/n]" input
+	if [ $input == 'y' ] || [ $input == 'Y' ]; then
+        if [ ! -f "$NEXUS_WEB" ];then
+    	    wget "$NEXUS_WEB_URL"
+        fi
+    	mkdir nexus
+    	mv "$NEXUS_WEB" nexus
+    	cd nexus
+    	jar xvf "$NEXUS_WEB"
+    	mv "$NEXUS_WEB" ..
+    	cd ..
+    	mv nexus "$WEBAPPS_HOME"
+    	chown -R tomcat6:tomcat6 "${WEBAPPS_HOME}/nexus"
+    	mkdir "$NEXUS_WORK"
+    	chown -R tomcat6:tomcat6 "$NEXUS_WORK"
+    	sed -i "s/nexus-work=.*/nexus-work="${NEXUS_WORK//\//\\/}"/g" "${WEBAPPS_HOME}/nexus/WEB-INF/nexus.properties"
+    	service tomcat6 restart
+    	read -p "conform with apache?[y/n]" input
+    	if [ "$input" == 'y' ] || [ "$input" == 'Y' ];then
+    		nexus="	JkMount /nexus\* ajp13_worker"
+    		line=$(sed -n '/<\/Directory>/=' "$SITES/default" | head -2 | tail -1)
+    		sed -i "${line}a\ ${nexus//\//\\/}" "$SITES/default"
+    		line=$(sed -n '/<\/Directory>/=' "$SITES/default-ssl" | head -2 | tail -1)
+    		sed -i "${line}a\ ${nexus//\//\\/}" "$SITES/default-ssl"
+    		service apache2 restart
+    	fi
+    	#rm "$NEXUS_WEB"
+    fi
+}
+
+function uninstall_oss(){
+	sudo service nexus stop #> /dev/null 2>&1
+	sudo update-rc.d -f nexus remove #> /dev/null 2>&1
+	sudo rm "$NEXUS_ETC"
+	sudo userdel "$NEXUS_USER"
+	sudo rm -rf "$NEXUS_HOME"/nexus* #> /dev/null 2>&1
+	read -p "remove nexus respositories?[y/n]" input
+	if [ "$input" == 'y' ];then
+		sudo rm -rf "$NEXUS_WORK" #> /dev/null 2>&1
+	fi
+}
+
+function install_oss(){
+	read -p "install nexus?[y/n]" input
+	if [ $input == 'y' ] || [ $input == 'Y' ]; then
+        if [ ! -f "$NEXUS_OSS" ];then
+    	    wget "$NEXUS_OSS_URL"
+        fi
+    	tar -xzvf "${NEXUS_OSS}" -C ${NEXUS_HOME}
+    	#rm "${NEXUS_OSS}"
+    	sudo rm "${NEXUS_HOME}/nexus" > /dev/null 2>&1
+    	sudo ln -s "${NEXUS_HOME}/${NEXUS_FILE}" "${NEXUS_HOME}/nexus" > /dev/null 2>&1
+    	
+    	#添加nexus用户
+    	if [ "$(grep ^nexus /etc/passwd)" == '' ];then
+    		sudo useradd -d "$NEXUS_WORK" -s /bin/sh "$NEXUS_USER"
+    	fi
+    	#nexus用户主目录
+    	if [ ! -d "$NEXUS_WORK" ];then
+    	    sudo mkdir -p "$NEXUS_WORK"
+    	fi
+    	sudo chown -R "$NEXUS_USER":"$NEXUS_USER" "$NEXUS_WORK"
+    	sudo chown -R "$NEXUS_USER":"$NEXUS_USER" "${NEXUS_HOME}/nexus"
+    	sudo chown -R "$NEXUS_USER":"$NEXUS_USER" "${NEXUS_HOME}/${NEXUS_FILE}"
+    	
+    	#http://www.sonatype.com/books/nexus-book/reference/ch03s06.html
+    	#cp "$NEXUS_HOME/nexus/bin/jsw/linux-x86-64/nexus" "$NEXUS_ETC"
+    	sudo cp "$NEXUS_HOME/nexus/bin/nexus" "$NEXUS_ETC"
+    	sudo chmod 755 "$NEXUS_ETC"
+    	
+    	#必要的环境变量
+        sudo sed -i "9a export PATH=\$PATH:\$JAVA_HOME\/bin" "$NEXUS_ETC"
+        sudo sed -i "9a export CLASS_PATH=\.:\$JAVA_HOME\/lib" "$NEXUS_ETC"
+        sudo sed -i "9a export JAVA_HOME=${JAVA_HOME//\//\\/}" "$NEXUS_ETC"
+    	sudo sed -i "s/^NEXUS_HOME=.*/NEXUS_HOME=\"${NEXUS_HOME//\//\\/}\/nexus\"/g" "$NEXUS_ETC"
+        sudo sed -i "15a PLATFORM=\"linux-x86-64\"" "$NEXUS_ETC"
+    	sudo sed -i "s/^#PIDDIR=.*/PIDDIR=\""${NEXUS_WORK//\//\\/}"\"/g" "$NEXUS_ETC"
+    	sudo sed -i "s/^WRAPPER_CMD=.*/WRAPPER_CMD=\"\${NEXUS_HOME}\/bin\/jsw\/\${PLATFORM}\/wrapper\"/g" "$NEXUS_ETC"
+    	sudo sed -i "s/^WRAPPER_CONF=.*/WRAPPER_CONF=\"\${NEXUS_HOME}\/bin\/jsw\/conf\/wrapper.conf\"/g" "$NEXUS_ETC"
+    
+    	#以nexus用户身份运行
+    	if [ "$(grep '^RUN_AS_USER=' "$NEXUS_ETC")" == '' ];then
+    		if [ "$(grep '^#RUN_AS_USER=' "$NEXUS_ETC")" != '' ];then
+    			sudo sed -i "s/^#RUN_AS_USER=.*/RUN_AS_USER=\""$NEXUS_USER"\"/g" "$NEXUS_ETC"
+    		else
+    			sudo sed -i "18a RUN_AS_USER=\""$NEXUS_USER"\"" "$NEXUS_ETC"
+    		fi
+    	fi
+    
+    	read -p "application-port[$NEXUS_PORT]:" port
+    	if [ $(echo $port | grep "^[0-9]*$") ];then
+    		NEXUS_PORT=$port
+    	fi
+    
+    	#改变运行端口号
+    	sudo sed -i "s/^application-port=.*/application-port="$NEXUS_PORT"/g" "$NEXUS_HOME/nexus/conf/nexus.properties"
+    	#改变运行目录
+    	sudo sed -i "s/^nexus-work=.*/nexus-work="${NEXUS_WORK//\//\\/}"/g" "$NEXUS_HOME/nexus/conf/nexus.properties"
+    	
+    	sudo update-rc.d nexus defaults
+    	sudo service nexus start
+    
+        sudo a2enmod proxy proxy_http rewrite
+    fi
+}
+
+function usage(){
+	echo "Usage: install-nexus { -i | -r } { -w | -o }"
+	echo "-i install nexus"
+	echo "-r uninstall nexus"
+	echo "-w web nexus"
+	echo "-o oss nexus"
+	echo "-h help message like this"
+}
+
+OPT="install"
+TYPE="oss"
+
+while getopts "hirwo" Option
+do
+	case $Option in
+		h | \?)usage&&exit 0;;
+		i)OPT="install";;
+		r)OPT="uninstall";;
+		w)TYPE="web";;
+		o)TYPE="oss";;
+	esac
+done
+
+if [ "$OPT" == "install" ];then
+	if [ "$TYPE" == "web" ];then
+		install_web
+	else
+		install_oss
+	fi
+else
+	if [ "$TYPE" == "web" ];then
+		uninstall_web
+	else
+		uninstall_oss
+	fi
+fi

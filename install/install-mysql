@@ -1,0 +1,38 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2012-01-07
+#describe:mysql
+
+SHELL_TOOLS=$(dirname "$0")
+cnf=/etc/mysql/my.cnf
+
+if [ "$(dpkg -l | grep mysql-server)" == '' ];then
+	read -p "install mysql?[y/n]" input
+	if [ $input == 'y' ] || [ $input == 'Y' ];then
+		sudo apt-get install  mysql-server
+		#默认登录用户名和密码
+		read -p "user:" user
+		if [ "$user" != '' ];then
+			while [ "$password" == '' ]
+			do
+				stty -echo
+				read -p "password:" password
+				stty echo
+				echo ''
+			done
+		else
+			user=''
+			password=''
+		fi
+		line=$(sed -n '/\[client\]/=' "$cnf")
+        sed -i "${line}a password=${password}" "$cnf"
+        sed -i "${line}a user=${user}" "$cnf"
+        sed -i "${line}a host=localhost" "$cnf"
+        line=$(sed -n '/\[mysqld\]/=' "$cnf")
+        sed -i "${line}a collation-server=utf8_general_ci" "$cnf"
+        sed -i "${line}a character-set-server=utf8" "$cnf"
+        sed -i "${line}a default-storage-engine=INNODB" "$cnf"
+        sudo service mysql restart	
+    fi
+fi

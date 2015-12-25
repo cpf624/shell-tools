@@ -1,0 +1,82 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2011-10-20
+#describe:创建hg版本库
+
+SHELL_TOOLS=$(dirname "$0")
+
+#版本库本地存放位置(最后一个目录作为项目名称)
+pathRepos=""
+#默认用户
+default_user="jhat"
+
+OPTERR=0
+
+function _help(){
+	echo "Usage repos_hg "
+	echo ""
+	echo "	-h print this help message."
+	echo "	-p the path of repository,the last folder will be as project's name."
+	echo "	-u default user for the repository,defaul value is[jhat]."
+	echo ""
+}
+
+while getopts "hp:u:" option
+do
+	case $option in
+	h)
+		_help
+		exit 0
+	;;
+	p)
+		pathRepos="$OPTARG"
+	;;
+	u)
+		if [ "$OPTARG" != "" ];then
+			default_user="$OPTARG"
+		fi
+	;;
+	esac
+done
+
+if [ "$pathRepos" == "" ];then
+	echo "Please input the path of repository."
+	_help
+	exit 1
+elif [ "${pathRepos:0:1}" != "/" ];then
+	pathRepos="$(pwd)/$pathRepos"
+fi
+
+if [ -f "$pathRepos" ];then
+	echo "[$pathRepos]is already exists,but it's a file."
+	exit 2
+fi
+mkdir -p "$pathRepos/repos"
+
+#配置文件拷贝
+cp "$SHELL_TOOLS"/conf/hgweb.cgi "$pathRepos"
+cp "$SHELL_TOOLS"/conf/hgweb.config "$pathRepos"
+cp "$SHELL_TOOLS"/conf/htaccess "$pathRepos/.htaccess"
+
+#配置替换（将用户指定的版本库本地存放位置应用至配置文件中）
+cd "$pathRepos"
+project=${pathRepos##/*/}
+pr=${pathRepos//\//\\/}
+sed -i "s/\${projectName}/$project/g" hgweb.cgi
+sed -i "s/\${pathRepos}/$pr/g" hgweb.cgi
+sed -i "s/\${pathRepos}/$pr/g" hgweb.config
+sed -i "s/\${pathRepos}/$pr/g" .htaccess
+
+#添加apache认证用户
+htpasswd -cm hgusers "$default_user"
+
+#创建版本库
+cd "$pathRepos"/repos
+if [ ! -e .hg ];then
+	hg init
+fi
+
+#添加默认用户至.hg/hgrc，使其能够push
+cp "$SHELL_TOOLS"/conf/hgrc .hg/
+sed -i "s/\${default_user}/$default_user/g" .hg/hgrc 

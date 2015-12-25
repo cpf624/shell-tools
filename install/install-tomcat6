@@ -1,0 +1,81 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2012-01-08
+#describe:tomcat
+
+SHELL_TOOLS=$(dirname "$0")
+
+if [ "$(dpkg -l | grep tomcat6)" == '' ];then
+	read -p "install tomcat6?[y/n]" input
+	if [ $input == 'y' ] || [ $input == 'Y' ];then
+		sudo apt-get install tomcat6 tomcat6-admin
+		bashrc="$HOME/.bashrc"
+		echo "export CATALINA_HOME=/usr/share/tomcat6" >> "$bashrc"
+		echo "export CATALINA_BASE=/var/lib/tomcat6" >> "$bashrc"
+		sudo service tomcat6 stop
+		sudo chgrp -R tomcat6 /etc/tomcat6
+		sudo chmod -R g+w /etc/tomcat6
+		#sudo usermod -d /var/lib/tomcat6 tomcat6
+		#sudo chown -R tomcat6:tomcat6 /usr/share/tomcat6
+		while [ "$admin" == '' ]
+		do
+			read -p "admin:" admin
+		done
+		stty -echo
+		while [ "$password" == '' ]
+		do
+			read -p "password:" password
+		done
+		stty echo
+		echo ''
+		tuser="/etc/tomcat6/tomcat-users.xml"
+		sudo sed -i "25a \	<role rolename=\"admin\"/>" "$tuser"
+		sudo sed -i "26a \	<role rolename=\"manager\"/>" "$tuser"
+		sudo sed -i "27a \	<user username=\""$admin"\" password=\""$password"\" roles=\"manager,admin\"/>" "$tuser"
+		server="/etc/tomcat6/server.xml"
+		sudo sed -i "25d" "$server"
+		sudo sed -i "26d" "$server"
+		declare -i line=91
+		read -p "need ssl?[y/n]" input
+		if [ $input == 'y' ] || [ $input == 'Y' ];then
+			sudo apt-get install libtcnative-1
+			while [ "$organization" == '' ]
+			do
+				read -p "organization:" organization
+			done
+			if [ ! -f "/etc/ssl/$organization.pem" ];then
+				ca_ssl "$organization"
+				sudo mv "$organization.pem" "$organization.crt" "$organization.key" /etc/ssl/
+			fi
+			password=''
+			while [ "$password" == '' ]
+			do
+				stty -echo
+				read -p "ssl password:" password
+				stty echo
+				echo ''
+			done
+			sudo sed -i "88a \	<Connector port=\"8443\" maxThreads=\"200\"" "$server"
+			sudo sed -i "89a \		scheme=\"https\" secure=\"true\" SSLEnabled=\"true\"" "$server"
+			sudo sed -i "90a \		SSLCertificateFile=\"/etc/ssl/$organization.cert\"" "$server"
+			sudo sed -i "91a \		SSLCertificateKeyFile=\"/etc/ssl/$organization.key\"" "$server"
+			sudo sed -i "92a \		SSLPassword=\"$password\"/>" "$server"
+			line=$line+5
+
+			read -p "only ssl?[y/n]" input
+			if [ $input == 'y' ] || [ $input == 'Y' ];then
+				sudo sed -i "68a \	<\!--" "$server"
+				sudo sed -i "73a \	-->" "$server"
+				line=$line+2
+			fi
+		fi
+		read -p "use AJP?[y/n]" input
+		if [ $input == 'y' ] || [ $input == 'Y' ];then
+			sudo sed -i "${line}d" "$server"
+			line=$line+1
+			sudo sed -i "${line}d" "$server"
+		fi
+		sudo service tomcat6 start
+	fi
+fi

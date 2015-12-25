@@ -1,0 +1,24 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2011-07-23
+#describe:
+
+file="struts.properties"
+
+cat > "$file" << EOF
+struts.i18n.encoding=UTF-8
+struts.devMode=true
+struts.configuration.xml.reload=true
+struts.i18n.reload=true
+#struts.objectFactory=org.apache.struts2.spring.StrutsSpringObjectFactory
+struts.ui.templateDir=template
+struts.ui.theme=simple
+struts.ui.templateSuffix=ftl
+struts.url.includeParams=none
+struts.action.extension=*
+EOF
+
+if [ "$1" == "-o" ];then
+	vi "$file"
+fi

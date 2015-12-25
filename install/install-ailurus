@@ -1,0 +1,14 @@
+#!/bin/bash
+#author:jhat
+#email:cpf624@126.com
+#date:2012-01-07
+#describe:小熊猫(ailurus)
+	
+if [ "$(dpkg -l | grep ailurus)" == '' ];then
+	read -p "install ailurus?[y/n]" input
+	if [ $input == 'y' ] || [ $input == 'Y' ]; then
+		sudo add-apt-repository ppa:ailurus/ppa
+		sudo apt-get update
+		sudo apt-get install ailurus
+	fi
+fi

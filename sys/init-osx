@@ -1,0 +1,61 @@
+#!/bin/bash
+# Author:   jhat
+# Date:     2014-03-28
+# Email:    cpf624@126.com
+# Home:     http://jhat.pw
+# Describe: mac init
+
+SHELL_TOOLS=$(dirname "$0")
+
+# install bash_profile
+bashrc="~/.bash_profile"
+cp "$SHELL_TOOLS/conf/bash_profile_osx" ~/.bash_profile
+
+while [ "$email" == '' ]
+do
+	read -p "email:" email
+done
+echo "export email=$email" >> ~/.bash_profile
+while [ "$home_page" == '' ]
+do
+	read -p "Home Page:" home_page
+done
+echo "export home_page=$home_page" >> ~/.bash_profile
+#创建项目目录
+project="$HOME/Documents/Projects"
+if [ ! -d "$project" ];then
+	mkdir -p "$project"
+fi
+echo "export project=$project" >> ~/.bash_profile
+
+# config tortoisehg
+cp "$SHELL_TOOLS/conf/hgrc" ~/.hgrc
+sed -i "" "s/\$username/"$USER"/g" ~/.hgrc
+sed -i "" "s/\$email/"$email"/g" ~/.hgrc
+
+# install  powerline font
+sudo cp "$SHELL_TOOLS/conf/Monaco_Linux-Powerline.ttf" /Library/Fonts
+
+# install brew
+ruby -e "$(curl -fsSL https://raw.github.com/Homebrew/homebrew/go/install)"
+
+# install ctags-exuberant
+brew install ctags-exuberant
+
+# install vim
+cp "$SHELL_TOOLS/conf/vimrc" ~/.vimrc
+if [ -d ~/.vim ]; then
+    rm -rf ~/.vim
+fi
+cp -r "$SHELL_TOOLS/conf/vim" ~/.vim
+
+brew install git
+brew install wget
+
+# install bash-completion
+brew install bash-completion
+cd /usr/local/Cellar/bash-completion/1.3/etc/bash_completion.d
+curl -O https://raw.github.com/git/git/master/contrib/completion/git-completion.bash
+curl -O https://raw.github.com/phleet/dotfiles/master/hg-completion.bash
+brew unlink bash-completion
+brew link bash-completion
